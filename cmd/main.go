@@ -18,4 +18,9 @@ func main() {
 	}
 	defer s.Fini()
 
+	// Default style
+	defStyle := tcell.StyleDefault.Background(tcell.ColorReset).Foreground(tcell.ColorReset)
+	s.SetStyle(defStyle)
+	s.Clear()
+
 }
