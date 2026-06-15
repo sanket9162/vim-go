@@ -5,20 +5,19 @@ import (
 
 	"github.com/gdamore/tcell/v3"
 	"github.com/sanket9162/vim-go/internal/buffer"
+	"github.com/sanket9162/vim-go/internal/ui"
 )
 
 func main() {
-	s, err := tcell.NewScreen()
+
+	s, err := ui.NewScreen()
 	if err != nil {
 		log.Fatalf("%+V", err)
 	}
-	if err = s.Init(); err != nil {
-		log.Fatalf("%+V", err)
-	}
-	defer s.Fini()
+	defer s.Close()
 
-	defStyle := tcell.StyleDefault.Background(tcell.ColorReset).Foreground(tcell.ColorReset)
-	s.SetStyle(defStyle)
+	width, height := s.Size()
+	_ = ui.NewViewport(width, height)
 
 	b := buffer.NewBuffer()
 	cursor := buffer.NewCursor(b)
@@ -30,17 +29,18 @@ func main() {
 		// 1. Render Buffer
 		for y, line := range b.Lines {
 			for x, r := range line {
-				s.SetContent(x, y, r, nil, defStyle)
+				s.DrawRune(x, y, r)
 			}
 		}
 
 		// 2. Render Status Line
 		_, h := s.Size()
 		statusLine := "-- " + mode + " --"
-		drawText(s, 0, h-1, defStyle, statusLine)
+		s.DrawText(0, h-1, statusLine)
 
 		s.ShowCursor(cursor.Col(), cursor.Row())
 		s.Show()
+
 
 		// 3. Handle Events
 		ev := <-s.EventQ()
@@ -90,11 +90,5 @@ func main() {
 				}
 			}
 		}
-	}
-}
-
-func drawText(s tcell.Screen, x, y int, style tcell.Style, text string) {
-	for i, r := range text {
-		s.SetContent(x+i, y, r, nil, style)
 	}
 }
