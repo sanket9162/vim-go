@@ -20,15 +20,15 @@ func main() {
 	defStyle := tcell.StyleDefault.Background(tcell.ColorReset).Foreground(tcell.ColorReset)
 	s.SetStyle(defStyle)
 
-	buffer := buffer.NewBuffer()
-	cx, cy := 0, 0
+	b := buffer.NewBuffer()
+	cursor := buffer.NewCursor(b)
 	mode := "NORMAL"
 
 	for {
 		s.Clear()
 
 		// 1. Render Buffer
-		for y, line := range buffer.Lines {
+		for y, line := range b.Lines {
 			for x, r := range line {
 				s.SetContent(x, y, r, nil, defStyle)
 			}
@@ -39,7 +39,7 @@ func main() {
 		statusLine := "-- " + mode + " --"
 		drawText(s, 0, h-1, defStyle, statusLine)
 
-		s.ShowCursor(cx, cy)
+		s.ShowCursor(cursor.Col(), cursor.Row())
 		s.Show()
 
 		// 3. Handle Events
@@ -59,27 +59,13 @@ func main() {
 				case tcell.KeyRune:
 					switch ev.Str() {
 					case "h":
-						if cx > 0 {
-							cx--
-						}
+						cursor.MoveLeft()
 					case "l":
-						if cx < len(buffer.Lines[cy]) {
-							cx++
-						}
+						cursor.MoveRight()
 					case "j":
-						if cy < len(buffer.Lines)-1 {
-							cy++
-							if cx > len(buffer.Lines[cy]) {
-								cx = len(buffer.Lines[cy])
-							}
-						}
+						cursor.MoveDown()
 					case "k":
-						if cy > 0 {
-							cy--
-							if cx > len(buffer.Lines[cy]) {
-								cx = len(buffer.Lines[cy])
-							}
-						}
+						cursor.MoveUp()
 					case "i":
 						mode = "INSERT"
 					}
@@ -88,20 +74,18 @@ func main() {
 				switch ev.Key() {
 				case tcell.KeyEscape:
 					mode = "NORMAL"
-					if cx > 0 {
-						cx--
-					}
+					cursor.MoveLeft()
 				case tcell.KeyEnter:
-					buffer.InsertNewline(cy, cx)
-					cy++
-					cx = 0
+					b.InsertNewline(cursor.Row(), cursor.Col())
+					cursor.SetPos(0, cursor.Row()+1)
 				case tcell.KeyBackspace, tcell.KeyBackspace2:
-					cy, cx = buffer.DeleteChar(cy, cx)
+					row, col := b.DeleteChar(cursor.Row(), cursor.Col())
+					cursor.SetPos(col, row)
 				case tcell.KeyRune:
 					runes := []rune(ev.Str())
 					for _, r := range runes {
-						buffer.InsertChar(cy, cx, r)
-						cx++
+						b.InsertChar(cursor.Row(), cursor.Col(), r)
+						cursor.SetPos(cursor.Col()+1, cursor.Row())
 					}
 				}
 			}

@@ -10,6 +10,17 @@ func NewBuffer() *Buffer {
 	}
 }
 
+func (b *Buffer) LineCount() int {
+	return len(b.Lines)
+}
+
+func (b *Buffer) LineLength(row int) int {
+	if row < 0 || row >= len(b.Lines) {
+		return 0
+	}
+	return len(b.Lines[row])
+}
+
 func (b *Buffer) InsertChar(row, col int, r rune) {
 	if row >= len(b.Lines) {
 		return
