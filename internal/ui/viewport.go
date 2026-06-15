@@ -10,11 +10,25 @@ type Viewport struct {
 func NewViewport(w, h int) *Viewport {
 	return &Viewport{
 		Width:  w,
-		Height: h,
+		Height: h - 1,
 	}
 }
 
 func (v *Viewport) SetSize(w, h int) {
 	v.Width = w
 	v.Height = h
+}
+
+func (v *Viewport) ScrollTo(col, row int) {
+	if row < v.OffsetY {
+		v.OffsetY = row
+	} else if row >= v.OffsetY+v.Height {
+		v.OffsetY = row - v.Height + 1
+	}
+
+	if col < v.OffsetX {
+		v.OffsetX = col
+	} else if col >= v.OffsetX+v.Width {
+		v.OffsetX = col - v.Width + 1
+	}
 }

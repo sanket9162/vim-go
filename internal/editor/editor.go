@@ -10,18 +10,21 @@ type Editor struct {
 	Buffer      *buffer.Buffer
 	Cursor      *buffer.Cursor
 	Screen      *ui.Screen
+	Viewport    *ui.Viewport
 	CurrentMode mode.Mode
 	modes       map[string]mode.Mode
 	Quit        bool
 }
 
 func NewEditor(s *ui.Screen) *Editor {
+	w, h := s.Size()
 	b := buffer.NewBuffer()
 	e := &Editor{
-		Buffer: b,
-		Cursor: buffer.NewCursor(b),
-		Screen: s,
-		modes:  make(map[string]mode.Mode),
+		Buffer:   b,
+		Cursor:   buffer.NewCursor(b),
+		Screen:   s,
+		Viewport: ui.NewViewport(w, h),
+		modes:    make(map[string]mode.Mode),
 	}
 
 	e.modes["NORMAL"] = &mode.NormalMode{}
@@ -61,22 +64,33 @@ func (e *Editor) QuitEditor() {
 	e.Quit = true
 }
 
-// Render tells the UI to draw the buffer and status line
 func (e *Editor) Render() {
 	e.Screen.Clear()
 
-	// Draw Buffer
-	for y, line := range e.Buffer.Lines {
-		for x, r := range line {
-			e.Screen.DrawRune(x, y, r)
+	e.Viewport.ScrollTo(e.Cursor.Col(), e.Cursor.Row())
+
+	for y := 0; y < e.Viewport.Height; y++ {
+		bufferRow := y + e.Viewport.OffsetY
+		if bufferRow >= len(e.Buffer.Lines) {
+			break
+		}
+
+		line := e.Buffer.Lines[bufferRow]
+		for x := 0; x < e.Viewport.Width; x++ {
+			bufferCol := x + e.Viewport.OffsetX
+			if bufferCol >= len(line) {
+				break
+			}
+			e.Screen.DrawRune(x, y, line[bufferCol])
 		}
 	}
 
-	// Draw Status Line
 	_, h := e.Screen.Size()
 	status := "-- " + e.CurrentMode.Name() + " --"
 	e.Screen.DrawText(0, h-1, status)
 
-	e.Screen.ShowCursor(e.Cursor.Col(), e.Cursor.Row())
+	visualX := e.Cursor.Col() - e.Viewport.OffsetX
+	visualY := e.Cursor.Row() - e.Viewport.OffsetY
+	e.Screen.ShowCursor(visualX, visualY)
 	e.Screen.Show()
 }
