@@ -110,3 +110,13 @@ func (e *Editor) Render() {
 	e.Screen.ShowCursor(visualX, visualY)
 	e.Screen.Show()
 }
+
+func (e *Editor) ExecuteCommand(cmd string) {
+	switch cmd {
+	case "q":
+		e.QuitEditor()
+	case "wq":
+		e.QuitEditor()
+
+	}
+}
