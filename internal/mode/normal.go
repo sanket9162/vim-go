@@ -24,6 +24,8 @@ func (m *NormalMode) HandleKey(e EditorInterface, ev *tcell.EventKey) {
 			e.MoveCursorUp()
 		case "i":
 			e.SetMode("INSERT")
+		case ":":
+			e.SetMode("COMMAND")
 		}
 	}
 }
