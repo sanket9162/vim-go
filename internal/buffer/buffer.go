@@ -1,5 +1,10 @@
 package buffer
 
+import (
+	"bufio"
+	"os"
+)
+
 // Buffer represents the text content being edited as a slice of rune slices.
 type Buffer struct {
 	Lines [][]rune
@@ -67,4 +72,47 @@ func (b *Buffer) InsertNewline(row, col int) {
 	copy(newLines[row+2:], b.Lines[row+1:])
 	newLines[row+1] = remaining
 	b.Lines = newLines
+}
+
+// Load reads the contents of a file into the buffer.
+func (b *Buffer) Load(filename string) error {
+	file, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	var lines [][]rune
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		lines = append(lines, []rune(scanner.Text()))
+	}
+
+	if len(lines) == 0 {
+		lines = append(lines, []rune{})
+	}
+
+	b.Lines = lines
+	return scanner.Err()
+}
+
+// Save writes the buffer contents to the specified file.
+func (b *Buffer) Save(filename string) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	writer := bufio.NewWriter(file)
+	for i, line := range b.Lines {
+		_, err := writer.WriteString(string(line))
+		if err != nil {
+			return err
+		}
+		if i < len(b.Lines)-1 {
+			writer.WriteByte('\n')
+		}
+	}
+	return writer.Flush()
 }
