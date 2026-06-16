@@ -1,13 +1,20 @@
 package mode
 
-import "github.com/gdamore/tcell/v3"
+import (
+	"github.com/gdamore/tcell/v3"
+)
 
+// CommandMode handles the state where the user is typing a command after pressing ':'.
 type CommandMode struct {
 	Command string
 }
 
-func (m *CommandMode) Name() string { return ":" + m.Command }
+// Name returns the current command string prefixed with a colon.
+func (m *CommandMode) Name() string {
+	return ":" + m.Command
+}
 
+// HandleKey handles key events while in command mode.
 func (m *CommandMode) HandleKey(e EditorInterface, ev *tcell.EventKey) {
 	switch ev.Key() {
 	case tcell.KeyEscape:
@@ -24,6 +31,6 @@ func (m *CommandMode) HandleKey(e EditorInterface, ev *tcell.EventKey) {
 			e.SetMode("NORMAL")
 		}
 	case tcell.KeyRune:
-		m.Command += string(ev.Rune())
+		m.Command += ev.Str()
 	}
 }

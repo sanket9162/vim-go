@@ -32,6 +32,7 @@ func NewEditor(s *ui.Screen) *Editor {
 
 	e.modes["NORMAL"] = &mode.NormalMode{}
 	e.modes["INSERT"] = &mode.InsertMode{}
+	e.modes["COMMAND"] = &mode.CommandMode{}
 	e.CurrentMode = e.modes["NORMAL"]
 
 	return e
@@ -102,11 +103,20 @@ func (e *Editor) Render() {
 	}
 
 	_, h := e.Screen.Size()
-	status := "-- " + e.CurrentMode.Name() + " --"
+	status := ""
+	if e.CurrentMode.Name()[0] == ':' {
+		status = e.CurrentMode.Name()
+	} else {
+		status = "-- " + e.CurrentMode.Name() + " --"
+	}
 	e.Screen.DrawText(0, h-1, status)
 
 	visualX := e.Cursor.Col() - e.Viewport.OffsetX
 	visualY := e.Cursor.Row() - e.Viewport.OffsetY
+	if e.CurrentMode.Name()[0] == ':' {
+		visualX = len(e.CurrentMode.Name())
+		visualY = h - 1
+	}
 	e.Screen.ShowCursor(visualX, visualY)
 	e.Screen.Show()
 }
