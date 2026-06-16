@@ -6,6 +6,7 @@ import (
 	"github.com/sanket9162/vim-go/internal/ui"
 )
 
+// Editor is the main controller that ties the buffer, cursor, and screen together.
 type Editor struct {
 	Buffer      *buffer.Buffer
 	Cursor      *buffer.Cursor
@@ -16,9 +17,11 @@ type Editor struct {
 	Quit        bool
 }
 
+// NewEditor initializes a new Editor instance.
 func NewEditor(s *ui.Screen) *Editor {
 	w, h := s.Size()
 	b := buffer.NewBuffer()
+
 	e := &Editor{
 		Buffer:   b,
 		Cursor:   buffer.NewCursor(b),
@@ -34,36 +37,49 @@ func NewEditor(s *ui.Screen) *Editor {
 	return e
 }
 
+// SetMode changes the editor's current input mode.
 func (e *Editor) SetMode(name string) {
 	if m, ok := e.modes[name]; ok {
 		e.CurrentMode = m
 	}
 }
 
-func (e *Editor) MoveCursorLeft()  { e.Cursor.MoveLeft() }
-func (e *Editor) MoveCursorRight() { e.Cursor.MoveRight() }
-func (e *Editor) MoveCursorUp()    { e.Cursor.MoveUp() }
-func (e *Editor) MoveCursorDown()  { e.Cursor.MoveDown() }
+// MoveCursorLeft moves the cursor one position to the left.
+func (e *Editor) MoveCursorLeft() { e.Cursor.MoveLeft() }
 
+// MoveCursorRight moves the cursor one position to the right.
+func (e *Editor) MoveCursorRight() { e.Cursor.MoveRight() }
+
+// MoveCursorUp moves the cursor one position up.
+func (e *Editor) MoveCursorUp() { e.Cursor.MoveUp() }
+
+// MoveCursorDown moves the cursor one position down.
+func (e *Editor) MoveCursorDown() { e.Cursor.MoveDown() }
+
+// InsertChar inserts a single character into the buffer at the cursor position.
 func (e *Editor) InsertChar(r rune) {
 	e.Buffer.InsertChar(e.Cursor.Row(), e.Cursor.Col(), r)
 	e.Cursor.SetPos(e.Cursor.Col()+1, e.Cursor.Row())
 }
 
+// InsertNewline inserts a newline at the cursor position.
 func (e *Editor) InsertNewline() {
 	e.Buffer.InsertNewline(e.Cursor.Row(), e.Cursor.Col())
 	e.Cursor.SetPos(0, e.Cursor.Row()+1)
 }
 
+// DeleteChar deletes the character before the cursor position.
 func (e *Editor) DeleteChar() {
 	row, col := e.Buffer.DeleteChar(e.Cursor.Row(), e.Cursor.Col())
 	e.Cursor.SetPos(col, row)
 }
 
+// QuitEditor sets the flag to exit the editor.
 func (e *Editor) QuitEditor() {
 	e.Quit = true
 }
 
+// Render updates the visual state of the editor on the screen.
 func (e *Editor) Render() {
 	e.Screen.Clear()
 

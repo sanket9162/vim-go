@@ -4,8 +4,10 @@ import "github.com/gdamore/tcell/v3"
 
 type NormalMode struct{}
 
+// Name returns the name of the normal mode.
 func (m *NormalMode) Name() string { return "NORMAL" }
 
+// HandleKey handles the key press events in normal mode.
 func (m *NormalMode) HandleKey(e EditorInterface, ev *tcell.EventKey) {
 	switch ev.Key() {
 	case tcell.KeyEscape:

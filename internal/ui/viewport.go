@@ -14,11 +14,13 @@ func NewViewport(w, h int) *Viewport {
 	}
 }
 
+// SetSize updates the viewport dimensions.
 func (v *Viewport) SetSize(w, h int) {
 	v.Width = w
 	v.Height = h
 }
 
+// ScrollTo adjusts the viewport offset to keep the cursor in view.
 func (v *Viewport) ScrollTo(col, row int) {
 	if row < v.OffsetY {
 		v.OffsetY = row

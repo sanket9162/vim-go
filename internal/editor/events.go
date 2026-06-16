@@ -4,6 +4,7 @@ import (
 	"github.com/gdamore/tcell/v3"
 )
 
+// Run starts the main event loop of the editor.
 func (e *Editor) Run() {
 	for {
 		if e.Quit {
@@ -22,6 +23,7 @@ func (e *Editor) Run() {
 	}
 }
 
+// handleKey handles the key press events from the user.
 func (e *Editor) handleKey(ev *tcell.EventKey) {
 	if ev.Key() == tcell.KeyCtrlC {
 		e.Quit = true

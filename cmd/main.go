@@ -8,12 +8,14 @@ import (
 )
 
 func main() {
+	// Initialize the TUI screen.
 	s, err := ui.NewScreen()
 	if err != nil {
 		log.Fatalf("%+V", err)
 	}
 	defer s.Close()
 
+	// Create and run the editor.
 	e := editor.NewEditor(s)
 	e.Run()
 }
