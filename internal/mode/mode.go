@@ -15,6 +15,7 @@ type EditorInterface interface {
 	DeleteChar()
 	SetMode(name string)
 	QuitEditor()
+	ExecuteCommand(cmd string)
 }
 
 // Mode represents a state of the editor with its own key handling logic.
