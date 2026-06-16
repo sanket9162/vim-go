@@ -16,6 +16,7 @@ type EditorInterface interface {
 	SetMode(name string)
 	QuitEditor()
 	ExecuteCommand(cmd string)
+	SaveFile()
 }
 
 // Mode represents a state of the editor with its own key handling logic.

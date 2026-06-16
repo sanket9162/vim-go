@@ -15,18 +15,25 @@ type Editor struct {
 	CurrentMode mode.Mode
 	modes       map[string]mode.Mode
 	Quit        bool
+	FileName    string
 }
 
 // NewEditor initializes a new Editor instance.
-func NewEditor(s *ui.Screen) *Editor {
+func NewEditor(s *ui.Screen, filename string) *Editor {
 	w, h := s.Size()
 	b := buffer.NewBuffer()
+
+	// Load file if provided
+	if filename != "" {
+		_ = b.Load(filename)
+	}
 
 	e := &Editor{
 		Buffer:   b,
 		Cursor:   buffer.NewCursor(b),
 		Screen:   s,
 		Viewport: ui.NewViewport(w, h),
+		FileName: filename,
 		modes:    make(map[string]mode.Mode),
 	}
 
@@ -121,11 +128,21 @@ func (e *Editor) Render() {
 	e.Screen.Show()
 }
 
+// SaveFile writes the current buffer content back to the associated file.
+func (e *Editor) SaveFile() {
+	if e.FileName != "" {
+		_ = e.Buffer.Save(e.FileName)
+	}
+}
+
 func (e *Editor) ExecuteCommand(cmd string) {
 	switch cmd {
 	case "q":
 		e.QuitEditor()
+	case "w":
+		e.SaveFile()
 	case "wq":
+		e.SaveFile()
 		e.QuitEditor()
 
 	}
