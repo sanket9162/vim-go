@@ -1,6 +1,9 @@
 package editor
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/sanket9162/vim-go/internal/buffer"
 	"github.com/sanket9162/vim-go/internal/mode"
 	"github.com/sanket9162/vim-go/internal/ui"
@@ -91,13 +94,27 @@ func (e *Editor) QuitEditor() {
 func (e *Editor) Render() {
 	e.Screen.Clear()
 
+	// Calculate line number gutter width (e.g., " 1" is 4 chars)
+	totalLines := e.Buffer.LineCount()
+	gutterWidth := len(fmt.Sprintf("%d", totalLines)) + 2
+
+	// Adjust viewport width to account for the gutter
+	screenWidth, screenHeight := e.Screen.Size()
+	e.Viewport.Width = screenWidth - gutterWidth
+	e.Viewport.Height = screenHeight - 1
+
 	e.Viewport.ScrollTo(e.Cursor.Col(), e.Cursor.Row())
 
 	for y := 0; y < e.Viewport.Height; y++ {
 		bufferRow := y + e.Viewport.OffsetY
-		if bufferRow >= e.Buffer.LineCount() {
+		if bufferRow >= totalLines {
 			break
 		}
+
+		// Draw Line Number
+		lineNumstr := fmt.Sprintf("%*d", gutterWidth-1, bufferRow+1)
+		// Optional : Draw with a different style/color
+		e.Screen.DrawText(0, y, lineNumstr)
 
 		line := e.Buffer.GetLine(bufferRow)
 		for x := 0; x < e.Viewport.Width; x++ {
@@ -105,7 +122,7 @@ func (e *Editor) Render() {
 			if bufferCol >= len(line) {
 				break
 			}
-			e.Screen.DrawRune(x, y, line[bufferCol])
+			e.Screen.DrawRune(x+gutterWidth, y, line[bufferCol])
 		}
 	}
 
@@ -132,6 +149,34 @@ func (e *Editor) Render() {
 func (e *Editor) SaveFile() {
 	if e.FileName != "" {
 		_ = e.Buffer.Save(e.FileName)
+	}
+}
+
+func (e *Editor) renderStatusBar(gutterWidth int) {
+	w, h := e.Screen.Size()
+
+	// Left side: Mode and Filename
+	modeName := e.CurrentMode.Name()
+	if !strings.HasPrefix(modeName, ":") {
+		modeName = "--" + modeName + "--"
+	}
+
+	fileName := e.FileName
+	if fileName == "" {
+		fileName = "[No Name]"
+	}
+
+	leftStatus := fmt.Sprintf("%s %s", modeName, fileName)
+
+	// Right side: Row and Column
+	rightStatus := fmt.Sprintf("%d,%d", e.Cursor.Row()+1, e.Cursor.Col()+1)
+
+	// Draw left part
+	e.Screen.DrawText(0, h-1, leftStatus)
+
+	// Draw right part (aligned to right)
+	if w > len(leftStatus)+len(rightStatus)+2 {
+		e.Screen.DrawText(w-len(rightStatus), h-1, rightStatus)
 	}
 }
 
