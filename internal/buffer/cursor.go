@@ -54,9 +54,7 @@ func (c *Cursor) MoveRight() {
 func (c *Cursor) MoveUp() {
 	if c.row > 0 {
 		c.row--
-		if c.col > len(c.buf.Lines[c.row]) {
-			c.col = len(c.buf.Lines[c.row])
-		}
+		c.snapToLineLength()
 	}
 }
 
@@ -75,11 +73,9 @@ func (c *Cursor) MoveToEndOfLine() {
 
 // MoveDown moves the cursor to the down.
 func (c *Cursor) MoveDown() {
-	if c.row < len(c.buf.Lines)-1 {
+	if c.row < c.buf.LineCount()-1 {
 		c.row++
-		if c.col > len(c.buf.Lines[c.row]) {
-			c.col = len(c.buf.Lines[c.row])
-		}
+		c.snapToLineLength()
 	}
 }
 

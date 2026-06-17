@@ -1,118 +1,149 @@
 package buffer
 
 import (
-	"bufio"
 	"os"
 )
 
-// Buffer represents the text content being edited as a slice of rune slices.
+// Buffer wraps a GapBuffer and translates between 2D (row, col) coordinates
+// used by the UI and the 1D logical indices used by the GapBuffer.
 type Buffer struct {
-	Lines [][]rune
-}
-
-// NewBuffer creates and returns a new empty Buffer.
-func NewBuffer() *Buffer {
-	return &Buffer{
-		Lines: [][]rune{{}},
-	}
+	gb        *GapBuffer
+	lineStart []int // Stores the 1D index where each line begins
 }
 
 // Load reads the contents of a file into the buffer.
 func (b *Buffer) Load(filename string) error {
-	file, err := os.Open(filename)
+	data, err := os.ReadFile(filename)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
-
-	var lines [][]rune
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		lines = append(lines, []rune(scanner.Text()))
+	
+	// Create a new GapBuffer large enough to hold the file + some extra space
+	size := len(data) * 2
+	if size < 1024 {
+		size = 1024
 	}
-
-	if len(lines) == 0 {
-		lines = append(lines, []rune{})
+	b.gb = NewGapBuffer(size)
+	
+	// Insert all data at once
+	for i, r := range string(data) {
+		b.gb.data[i] = r
 	}
-
-	b.Lines = lines
-	return scanner.Err()
+	b.gb.gapLeft = len(string(data))
+	
+	b.recomputeLineStarts()
+	return nil
 }
 
 // Save writes the buffer contents to the specified file.
 func (b *Buffer) Save(filename string) error {
-	file, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	writer := bufio.NewWriter(file)
-	for i, line := range b.Lines {
-		_, err := writer.WriteString(string(line))
-		if err != nil {
-			return err
-		}
-		if i < len(b.Lines)-1 {
-			writer.WriteByte('\n')
-		}
-	}
-	return writer.Flush()
+	text := b.gb.Text()
+	return os.WriteFile(filename, []byte(text), 0644)
 }
 
-// LineCount returns the number of lines currently in the buffer.
+// NewBuffer creates a new Buffer utilizing a GapBuffer backend.
+func NewBuffer() *Buffer {
+	b := &Buffer{
+		gb:        NewGapBuffer(1024),
+		lineStart: []int{0}, // Line 0 starts at index 0
+	}
+	return b
+}
+
+// LineCount returns the number of lines in the buffer.
 func (b *Buffer) LineCount() int {
-	return len(b.Lines)
+	return len(b.lineStart)
 }
 
-// LineLength returns the number of characters in the specified row.
+// LineLength returns the number of characters in the specified row, excluding the newline.
 func (b *Buffer) LineLength(row int) int {
-	if row < 0 || row >= len(b.Lines) {
+	if row < 0 || row >= b.LineCount() {
 		return 0
 	}
-	return len(b.Lines[row])
+	
+	start := b.lineStart[row]
+	var end int
+	if row == b.LineCount()-1 {
+		end = b.gb.Length()
+	} else {
+		end = b.lineStart[row+1] - 1 // -1 to exclude the '\n'
+	}
+	return end - start
+}
+
+// getIndex converts a 2D (row, col) position into a 1D GapBuffer index.
+func (b *Buffer) getIndex(row, col int) int {
+	if row < 0 {
+		return 0
+	}
+	if row >= b.LineCount() {
+		return b.gb.Length()
+	}
+	
+	start := b.lineStart[row]
+	length := b.LineLength(row)
+	if col > length {
+		col = length
+	}
+	return start + col
+}
+
+// recomputeLineStarts scans the buffer and updates the lineStart cache.
+// This is a naive implementation; optimized versions only scan from the edit point.
+func (b *Buffer) recomputeLineStarts() {
+	starts := []int{0}
+	length := b.gb.Length()
+	for i := 0; i < length; i++ {
+		if b.gb.GetRune(i) == '\n' {
+			starts = append(starts, i+1)
+		}
+	}
+	b.lineStart = starts
 }
 
 // InsertChar inserts a rune at the specified row and column.
 func (b *Buffer) InsertChar(row, col int, r rune) {
-	if row >= len(b.Lines) {
-		return
-	}
-
-	line := b.Lines[row]
-	line = append(line, 0)
-	copy(line[col+1:], line[col:])
-	line[col] = r
-	b.Lines[row] = line
+	idx := b.getIndex(row, col)
+	b.gb.Insert(idx, r)
+	b.recomputeLineStarts()
 }
 
-// DeleteChar removes a character at the specified row and column.
-// If the column is 0, it merges the current line with the previous one.
-func (b *Buffer) DeleteChar(row, col int) (int, int) {
-	if col > 0 {
-		line := b.Lines[row]
-		b.Lines[row] = append(line[:col-1], line[col:]...)
-		return row, col - 1
-	} else if row > 0 {
-		prevLine := b.Lines[row-1]
-		newCol := len(prevLine)
-		b.Lines[row-1] = append(prevLine, b.Lines[row]...)
+// InsertNewline inserts a newline character at the cursor position.
+func (b *Buffer) InsertNewline(row, col int) {
+	idx := b.getIndex(row, col)
+	b.gb.Insert(idx, '\n')
+	b.recomputeLineStarts()
+}
 
-		b.Lines = append(b.Lines[:row], b.Lines[row+1:]...)
-		return row - 1, newCol
+// DeleteChar removes a character before the specified row and column.
+func (b *Buffer) DeleteChar(row, col int) (int, int) {
+	idx := b.getIndex(row, col)
+	if idx > 0 {
+		b.gb.Delete(idx)
+		b.recomputeLineStarts()
+		
+		// Calculate new 2D position to return to the cursor
+		if col > 0 {
+			return row, col - 1
+		}
+		// If we deleted a newline, cursor moves to end of previous line
+		return row - 1, b.LineLength(row - 1)
 	}
 	return row, col
 }
 
-// InsertNewline splits the line at the specified row and column into two lines.
-func (b *Buffer) InsertNewline(row, col int) {
-	line := b.Lines[row]
-	remaining := append([]rune{}, line[col:]...) // Copy text after cursor
-	b.Lines[row] = line[:col]                    // Trim current line
-
-	// Insert the 'remaining' slice as a new line
-	newLines := append(b.Lines[:row+1], nil)
-	copy(newLines[row+2:], b.Lines[row+1:])
-	newLines[row+1] = remaining
-	b.Lines = newLines
+// GetLine returns a specific line as a slice of runes for rendering.
+func (b *Buffer) GetLine(row int) []rune {
+	if row < 0 || row >= b.LineCount() {
+		return nil
+	}
+	
+	start := b.lineStart[row]
+	length := b.LineLength(row)
+	line := make([]rune, length)
+	
+	for i := 0; i < length; i++ {
+		line[i] = b.gb.GetRune(start + i)
+	}
+	return line
 }

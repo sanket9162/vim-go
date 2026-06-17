@@ -95,11 +95,11 @@ func (e *Editor) Render() {
 
 	for y := 0; y < e.Viewport.Height; y++ {
 		bufferRow := y + e.Viewport.OffsetY
-		if bufferRow >= len(e.Buffer.Lines) {
+		if bufferRow >= e.Buffer.LineCount() {
 			break
 		}
 
-		line := e.Buffer.Lines[bufferRow]
+		line := e.Buffer.GetLine(bufferRow)
 		for x := 0; x < e.Viewport.Width; x++ {
 			bufferCol := x + e.Viewport.OffsetX
 			if bufferCol >= len(line) {
