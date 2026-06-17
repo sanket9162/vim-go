@@ -90,6 +90,10 @@ func (e *Editor) QuitEditor() {
 	e.Quit = true
 }
 
+func (e *Editor) MoveCursorToStartOfFile() {
+	e.Cursor.MoveToStartOfFile()
+}
+
 // Render updates the visual state of the editor on the screen.
 func (e *Editor) Render() {
 	e.Screen.Clear()

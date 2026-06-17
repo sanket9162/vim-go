@@ -89,3 +89,8 @@ func (c *Cursor) snapToLineLength() {
 		c.col = c.idealX
 	}
 }
+
+// MoveToStartOfFile jumps to the very first line
+func (c *Cursor) MoveToStartOfFile() {
+	c.SetPos(0, 0)
+}

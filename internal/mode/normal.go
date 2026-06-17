@@ -22,6 +22,8 @@ func (m *NormalMode) HandleKey(e EditorInterface, ev *tcell.EventKey) {
 			e.MoveCursorDown()
 		case "k":
 			e.MoveCursorUp()
+		case "0":
+			e.MoveCursorToStartOfFile()
 		case "i":
 			e.SetMode("INSERT")
 		case ":":
