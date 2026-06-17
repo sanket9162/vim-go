@@ -126,21 +126,22 @@ func (e *Editor) Render() {
 		}
 	}
 
-	_, h := e.Screen.Size()
-	status := ""
-	if e.CurrentMode.Name()[0] == ':' {
-		status = e.CurrentMode.Name()
-	} else {
-		status = "-- " + e.CurrentMode.Name() + " --"
-	}
-	e.Screen.DrawText(0, h-1, status)
+	// Draw the enhanced status bar
+	e.renderStatusBar(gutterWidth)
 
-	visualX := e.Cursor.Col() - e.Viewport.OffsetX
+	visualX := e.Cursor.Col() - e.Viewport.OffsetX + gutterWidth
 	visualY := e.Cursor.Row() - e.Viewport.OffsetY
-	if e.CurrentMode.Name()[0] == ':' {
+
+	// if e.CurrentMode.Name()[0] == ':' {
+	// 	visualX = len(e.CurrentMode.Name())
+	// 	visualY = screenHeight - 1
+	// }
+
+	if strings.HasPrefix(e.CurrentMode.Name(), ":") {
 		visualX = len(e.CurrentMode.Name())
-		visualY = h - 1
+		visualY = screenHeight - 1
 	}
+
 	e.Screen.ShowCursor(visualX, visualY)
 	e.Screen.Show()
 }
