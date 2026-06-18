@@ -94,6 +94,10 @@ func (e *Editor) MoveCursorToStartOfFile() {
 	e.Cursor.MoveToStartOfFile()
 }
 
+func (e *Editor) MoveCursorToEndOfFile() {
+	e.Cursor.MoveToEndOfFile()
+}
+
 // Render updates the visual state of the editor on the screen.
 func (e *Editor) Render() {
 	e.Screen.Clear()

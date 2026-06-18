@@ -94,3 +94,12 @@ func (c *Cursor) snapToLineLength() {
 func (c *Cursor) MoveToStartOfFile() {
 	c.SetPos(0, 0)
 }
+
+// MoveToEndOfFile jumps to the very last line
+func (c *Cursor) MoveToEndOfFile() {
+	lastRow := c.buf.LineCount() - 1
+	if lastRow < 0 {
+		lastRow = 0
+	}
+	c.SetPos(0, lastRow)
+}
