@@ -103,3 +103,28 @@ func (c *Cursor) MoveToEndOfFile() {
 	}
 	c.SetPos(0, lastRow)
 }
+
+// MoveToNextWord moves to the start of the next wrod
+func (c *Cursor) MoveToNextWord() {
+	line := c.buf.GetLine(c.row)
+	col := c.col
+
+	// Move past current alphanumeric characters
+	for col < len(line) && isWordChar(line[col]) {
+		col++
+	}
+	// Move past whitespace/punctuation
+	for col < len(line) && !isWordChar(line[col]) {
+		col++
+	}
+
+	if col < len(line) {
+		c.SetPos(col, c.row)
+	} else if c.row < c.buf.LineCount()-1 {
+		c.SetPos(0, c.row)
+	}
+}
+
+func isWordChar(r rune) bool {
+	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_' || r == '-' || r == '.' || r == '!' || r == ':' || r == '+'
+}
