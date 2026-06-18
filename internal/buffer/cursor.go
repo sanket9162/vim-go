@@ -121,7 +121,7 @@ func (c *Cursor) MoveToNextWord() {
 	if col < len(line) {
 		c.SetPos(col, c.row)
 	} else if c.row < c.buf.LineCount()-1 {
-		c.SetPos(0, c.row)
+		c.SetPos(0, c.row+1)
 	}
 }
 
