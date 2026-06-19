@@ -106,6 +106,10 @@ func (e *Editor) MoveCursorToNextWord() {
 	e.Cursor.MoveToNextWord()
 }
 
+func (e *Editor) MoveCursorToEndOfLine() {
+	e.Cursor.MoveToEndOfLine()
+}
+
 // Render updates the visual state of the editor on the screen.
 func (e *Editor) Render() {
 	e.Screen.Clear()
