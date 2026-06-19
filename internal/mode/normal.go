@@ -2,7 +2,9 @@ package mode
 
 import "github.com/gdamore/tcell/v3"
 
-type NormalMode struct{}
+type NormalMode struct {
+	pendingKey string
+}
 
 // Name returns the name of the normal mode.
 func (m *NormalMode) Name() string { return "NORMAL" }
@@ -11,9 +13,21 @@ func (m *NormalMode) Name() string { return "NORMAL" }
 func (m *NormalMode) HandleKey(e EditorInterface, ev *tcell.EventKey) {
 	switch ev.Key() {
 	case tcell.KeyEscape:
+		m.pendingKey = ""
 		e.QuitEditor()
 	case tcell.KeyRune:
-		switch ev.Str() {
+		keyStr := ev.Str()
+		if m.pendingKey == "g" {
+			m.pendingKey = ""
+			if keyStr == "g" {
+				e.MoveCursorToStartOfFile()
+				return
+			}
+		}
+
+		switch keyStr {
+		case "g":
+			m.pendingKey = "g"
 		case "h":
 			e.MoveCursorLeft()
 		case "l":
@@ -23,7 +37,7 @@ func (m *NormalMode) HandleKey(e EditorInterface, ev *tcell.EventKey) {
 		case "k":
 			e.MoveCursorUp()
 		case "0":
-			e.MoveCursorToStartOfFile()
+			e.MoveCursorToStartOfLine()
 		case "G":
 			e.MoveCursorToEndOfFile()
 		case "w":
@@ -33,5 +47,7 @@ func (m *NormalMode) HandleKey(e EditorInterface, ev *tcell.EventKey) {
 		case ":":
 			e.SetMode("COMMAND")
 		}
+	default:
+		m.pendingKey = ""
 	}
 }

@@ -90,6 +90,10 @@ func (e *Editor) QuitEditor() {
 	e.Quit = true
 }
 
+func (e *Editor) MoveCursorToStartOfLine() {
+	e.Cursor.MoveToStartOfLine()
+}
+
 func (e *Editor) MoveCursorToStartOfFile() {
 	e.Cursor.MoveToStartOfFile()
 }

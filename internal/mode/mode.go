@@ -10,6 +10,7 @@ type EditorInterface interface {
 	MoveCursorRight()
 	MoveCursorUp()
 	MoveCursorDown()
+	MoveCursorToStartOfLine()
 	MoveCursorToStartOfFile()
 	MoveCursorToEndOfFile()
 	MoveCursorToNextWord()
