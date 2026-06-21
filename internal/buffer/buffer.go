@@ -4,11 +4,20 @@ import (
 	"os"
 )
 
+// Snapshot stores a text buffer checkpoint and cursor position.
+type Snapshot struct {
+	Text string
+	Col  int
+	Row  int
+}
+
 // Buffer wraps a GapBuffer and translates between 2D (row, col) coordinates
 // used by the UI and the 1D logical indices used by the GapBuffer.
 type Buffer struct {
 	gb        *GapBuffer
-	lineStart []int // Stores the 1D index where each line begins
+	lineStart []int      // Stores the 1D index where each line begins
+	undoStack []Snapshot // Stack of undo snapshots
+	redoStack []Snapshot // Stack of redo snapshots
 }
 
 // Load reads the contents of a file into the buffer.
@@ -194,4 +203,75 @@ func (b *Buffer) InsertLine(row int, text string) {
 	for i, r := range text {
 		b.InsertChar(row, i, r)
 	}
+}
+
+// SaveSnapshot saves the current buffer state to the undo stack and clears the redo stack.
+func (b *Buffer) SaveSnapshot(col, row int) {
+	b.undoStack = append(b.undoStack, Snapshot{
+		Text: b.gb.Text(),
+		Col:  col,
+		Row:  row,
+	})
+	b.redoStack = nil // Clear redo histroy on new edit.
+
+}
+
+// Undo pops from the undo stack, pushes current state to redo, and restores text.
+func (b *Buffer) Undo(col, row int) (int, int, bool) {
+	if len(b.undoStack) == 0 {
+		return col, row, false
+	}
+
+	b.redoStack = append(b.redoStack, Snapshot{
+		Text: b.gb.Text(),
+		Col:  col,
+		Row:  row,
+	})
+
+	idx := len(b.undoStack) - 1
+	snap := b.undoStack[idx]
+	b.undoStack = b.undoStack[:idx]
+
+	b.restoreText(snap.Text)
+	return snap.Col, snap.Row, true
+
+}
+
+// Redo pops from the redo stack, pushes current state to undo, and restores text.
+func (b *Buffer) Redo(col, row int) (int, int, bool) {
+	if len(b.redoStack) == 0 {
+		return col, row, false
+	}
+
+	b.undoStack = append(b.undoStack, Snapshot{
+		Text: b.gb.Text(),
+		Col:  col,
+		Row:  row,
+	})
+
+	idx := len(b.redoStack) - 1
+	snap := b.redoStack[idx]
+	b.redoStack = b.redoStack[:idx]
+
+	b.restoreText(snap.Text)
+	return snap.Col, snap.Row, true
+
+}
+
+// Helper to rebuild gap buffer from snapshot text
+func (b *Buffer) restoreText(text string) {
+	data := []byte(text)
+	size := len(data) * 2
+	if size < 1024 {
+		size = 1024
+	}
+	b.gb = NewGapBuffer(size)
+
+	for i, r := range string(data) {
+		b.gb.data[i] = r
+	}
+
+	b.gb.gapLeft = len(string(data))
+	b.recomputeLineStarts()
+
 }

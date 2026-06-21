@@ -21,6 +21,8 @@ type EditorInterface interface {
 	DeleteUnderCursor()
 	DeleteLine()
 	DeleteWord()
+	Undo()
+	Redo()
 	SetMode(name string)
 	GetMode(name string) Mode
 	QuitEditor()

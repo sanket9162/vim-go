@@ -480,3 +480,17 @@ func (e *Editor) Paste(before bool) {
 	}
 
 }
+
+func (e *Editor) Undo() {
+	cCol, cRow := e.Cursor.Col(), e.Cursor.Row()
+	if newCol, newRow, ok := e.Buffer.Undo(cCol, cRow); ok {
+		e.Cursor.SetPos(newCol, newRow)
+	}
+}
+
+func (e *Editor) Redo() {
+	cCol, cRow := e.Cursor.Col(), e.Cursor.Row()
+	if newCol, newRow, ok := e.Buffer.Redo(cCol, cRow); ok {
+		e.Cursor.SetPos(newCol, newRow)
+	}
+}
