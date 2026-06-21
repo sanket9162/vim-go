@@ -432,3 +432,51 @@ func (e *Editor) DeleteWord() {
 func isWordChar(r rune) bool {
 	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_' || r == '-' || r == '.' || r == '!' || r == ':' || r == '+'
 }
+
+func (e *Editor) Paste(before bool) {
+	if e.Clipboard == "" {
+		return
+	}
+
+	row := e.Cursor.Row()
+	col := e.Cursor.Col()
+	isLine := strings.HasSuffix(e.Clipboard, "\n")
+
+	if isLine {
+		lines := strings.Split(e.Clipboard, "\n")
+		// Remove empty trailing string from split
+		if len(lines) > 0 && lines[len(lines)-1] == "" {
+			lines = lines[:len(lines)-1]
+		}
+
+		targetRow := row
+		if !before {
+			targetRow = row + 1
+		}
+
+		// Insert lines in order
+		for i, lineText := range lines {
+			e.Buffer.InsertLine(targetRow+i, lineText)
+		}
+
+		e.Cursor.SetPos(0, targetRow)
+
+	} else {
+		targetCol := col
+		if !before {
+			lineLen := e.Buffer.LineLength(row)
+			if lineLen > 0 {
+				targetCol = col + 1
+			}
+		}
+
+		// Insert character-wise contents
+		for i, r := range e.Clipboard {
+			e.Buffer.InsertChar(row, targetCol+i, r)
+		}
+
+		e.Cursor.SetPos(targetCol+len(e.Clipboard)-1, row)
+
+	}
+
+}
