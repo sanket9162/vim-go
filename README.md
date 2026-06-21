@@ -12,6 +12,7 @@ A terminal-based, Vim-like text editor written in Go utilizing the `tcell/v3` li
 - **Buffer Logic**:
   - Powered by an efficient **Gap Buffer** (`GapBuffer`) data structure for fast insertions and deletions in large files.
   - Automatic line boundary cache recomputation.
+  - State snapshot history supporting full **Undo** and **Redo** capabilities.
 - **Rendering & TUI**:
   - Adaptive viewport scrolling keeping cursor in view.
   - Gutter showing line numbers that scales dynamically based on file length.
@@ -92,6 +93,8 @@ Open or edit an existing file:
 - `x` - Delete character under cursor.
 - `d d` - Delete current line.
 - `d w` - Delete word under cursor.
+- `u` - Undo the last operation.
+- `Ctrl-R` - Redo the last undone operation.
 
 ### Visual Mode
 - `h` / `j` / `k` / `l` / `0` / `$` / `w` - Adjust selection boundaries.
