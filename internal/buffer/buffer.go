@@ -17,20 +17,20 @@ func (b *Buffer) Load(filename string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	// Create a new GapBuffer large enough to hold the file + some extra space
 	size := len(data) * 2
 	if size < 1024 {
 		size = 1024
 	}
 	b.gb = NewGapBuffer(size)
-	
+
 	// Insert all data at once
 	for i, r := range string(data) {
 		b.gb.data[i] = r
 	}
 	b.gb.gapLeft = len(string(data))
-	
+
 	b.recomputeLineStarts()
 	return nil
 }
@@ -60,7 +60,7 @@ func (b *Buffer) LineLength(row int) int {
 	if row < 0 || row >= b.LineCount() {
 		return 0
 	}
-	
+
 	start := b.lineStart[row]
 	var end int
 	if row == b.LineCount()-1 {
@@ -79,7 +79,7 @@ func (b *Buffer) getIndex(row, col int) int {
 	if row >= b.LineCount() {
 		return b.gb.Length()
 	}
-	
+
 	start := b.lineStart[row]
 	length := b.LineLength(row)
 	if col > length {
@@ -121,7 +121,7 @@ func (b *Buffer) DeleteChar(row, col int) (int, int) {
 	if idx > 0 {
 		b.gb.Delete(idx)
 		b.recomputeLineStarts()
-		
+
 		// Calculate new 2D position to return to the cursor
 		if col > 0 {
 			return row, col - 1
@@ -163,13 +163,35 @@ func (b *Buffer) GetLine(row int) []rune {
 	if row < 0 || row >= b.LineCount() {
 		return nil
 	}
-	
+
 	start := b.lineStart[row]
 	length := b.LineLength(row)
 	line := make([]rune, length)
-	
+
 	for i := 0; i < length; i++ {
 		line[i] = b.gb.GetRune(start + i)
 	}
 	return line
+}
+
+// InserLine insers a full line of text at the specified row index.
+func (b *Buffer) InsertLine(row int, text string) {
+	lineCount := b.LineCount()
+	if row >= lineCount {
+		// Append to the end of the buffer
+		lastRow := lineCount - 1
+		if lastRow < 0 {
+			lastRow = 0
+		}
+		b.InsertNewline(lastRow, b.LineLength(lastRow))
+		row = b.LineCount() - 1
+	} else {
+		// Insert at the start of the specified row
+		b.InsertNewline(row, 0)
+	}
+
+	// Insert the characters of the line
+	for i, r := range text {
+		b.InsertChar(row, i, r)
+	}
 }
