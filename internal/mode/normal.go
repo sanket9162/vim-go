@@ -12,6 +12,9 @@ func (m *NormalMode) Name() string { return "NORMAL" }
 // HandleKey handles the key press events in normal mode.
 func (m *NormalMode) HandleKey(e EditorInterface, ev *tcell.EventKey) {
 	switch ev.Key() {
+	case tcell.KeyCtrlR:
+		e.Redo()
+		return
 	case tcell.KeyEscape:
 		m.pendingKey = ""
 		e.QuitEditor()
@@ -70,6 +73,8 @@ func (m *NormalMode) HandleKey(e EditorInterface, ev *tcell.EventKey) {
 			e.Paste(false)
 		case "P":
 			e.Paste(true)
+		case "u":
+			e.Undo()
 		case "i":
 			e.SetMode("INSERT")
 		case "v":
