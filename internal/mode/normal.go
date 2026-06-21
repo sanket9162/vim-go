@@ -28,13 +28,13 @@ func (m *NormalMode) HandleKey(e EditorInterface, ev *tcell.EventKey) {
 		switch keyStr {
 		case "g":
 			m.pendingKey = "g"
-		case "h":
-			e.MoveCursorLeft()
-		case "l":
-			e.MoveCursorRight()
 		case "j":
-			e.MoveCursorDown()
+			e.MoveCursorLeft()
+		case ";":
+			e.MoveCursorRight()
 		case "k":
+			e.MoveCursorDown()
+		case "l":
 			e.MoveCursorUp()
 		case "0":
 			e.MoveCursorToStartOfLine()
