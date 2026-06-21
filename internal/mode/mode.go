@@ -24,6 +24,7 @@ type EditorInterface interface {
 	SetMode(name string)
 	GetMode(name string) Mode
 	QuitEditor()
+	Paste(before bool)
 	ExecuteCommand(cmd string)
 	SaveFile()
 }

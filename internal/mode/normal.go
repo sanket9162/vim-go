@@ -68,6 +68,10 @@ func (m *NormalMode) HandleKey(e EditorInterface, ev *tcell.EventKey) {
 			e.SetMode("INSERT")
 		case "$":
 			e.MoveCursorToEndOfLine()
+		case "p":
+			e.Paste(false)
+		case "P":
+			e.Paste(true)
 		case "i":
 			e.SetMode("INSERT")
 		case "v":
