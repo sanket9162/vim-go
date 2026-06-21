@@ -4,10 +4,18 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gdamore/tcell/v3"
 	"github.com/sanket9162/vim-go/internal/buffer"
 	"github.com/sanket9162/vim-go/internal/mode"
 	"github.com/sanket9162/vim-go/internal/ui"
 )
+
+// Selection represents a 2D text selection range.
+type Selection struct {
+	StartCol, StartRow int
+	EndCol, EndRow     int
+	Active             bool
+}
 
 // Editor is the main controller that ties the buffer, cursor, and screen together.
 type Editor struct {
@@ -19,6 +27,8 @@ type Editor struct {
 	modes       map[string]mode.Mode
 	Quit        bool
 	FileName    string
+	Selection   Selection
+	Clipboard   string
 }
 
 // NewEditor initializes a new Editor instance.
@@ -43,6 +53,7 @@ func NewEditor(s *ui.Screen, filename string) *Editor {
 	e.modes["NORMAL"] = &mode.NormalMode{}
 	e.modes["INSERT"] = &mode.InsertMode{}
 	e.modes["COMMAND"] = &mode.CommandMode{}
+	e.modes["VISUAL"] = &mode.VisualMode{}
 	e.CurrentMode = e.modes["NORMAL"]
 
 	return e
@@ -52,7 +63,20 @@ func NewEditor(s *ui.Screen, filename string) *Editor {
 func (e *Editor) SetMode(name string) {
 	if m, ok := e.modes[name]; ok {
 		e.CurrentMode = m
+		if name == "VISUAL" {
+			if vm, ok := m.(*mode.VisualMode); ok {
+				vm.InitSelection(e.Cursor.Col(), e.Cursor.Row())
+				e.UpdateSelection(e.Cursor.Col(), e.Cursor.Row(), e.Cursor.Col(), e.Cursor.Row())
+			}
+		} else if name == "NORMAL" {
+			e.ClearSelection()
+		}
 	}
+}
+
+// GetMode returns the mode with the given name.
+func (e *Editor) GetMode(name string) mode.Mode {
+	return e.modes[name]
 }
 
 // MoveCursorLeft moves the cursor one position to the left.
@@ -142,7 +166,11 @@ func (e *Editor) Render() {
 			if bufferCol >= len(line) {
 				break
 			}
-			e.Screen.DrawRune(x+gutterWidth, y, line[bufferCol])
+			style := tcell.StyleDefault
+			if e.isSelected(bufferCol, bufferRow) {
+				style = tcell.StyleDefault.Background(tcell.ColorCadetBlue).Foreground(tcell.ColorWhite)
+			}
+			e.Screen.SetContent(x+gutterWidth, y, line[bufferCol], nil, style)
 		}
 	}
 
@@ -212,4 +240,121 @@ func (e *Editor) ExecuteCommand(cmd string) {
 		e.QuitEditor()
 
 	}
+}
+
+// GetCursorPos returns the current 2D cursor position.
+func (e *Editor) GetCursorPos() (col, row int) {
+	return e.Cursor.Col(), e.Cursor.Row()
+}
+
+// UpdateSelection sets the selection range parameters.
+func (e *Editor) UpdateSelection(startCol, startRow, endCol, endRow int) {
+	e.Selection = Selection{
+		StartCol: startCol,
+		StartRow: startRow,
+		EndCol:   endCol,
+		EndRow:   endRow,
+		Active:   true,
+	}
+}
+
+// ClearSelection deactivates text selection.
+func (e *Editor) ClearSelection() {
+	e.Selection.Active = false
+}
+
+// YankSelection copies the selected text into the editor's clipboard.
+func (e *Editor) YankSelection() {
+	if !e.Selection.Active {
+		return
+	}
+	e.Clipboard = e.getSelectedText()
+}
+
+// DeleteSelection cuts the selected text from the buffer and positions the cursor at selection start.
+func (e *Editor) DeleteSelection() {
+	if !e.Selection.Active {
+		return
+	}
+	rStart, cStart, rEnd, cEnd := e.getNormalizedSelection()
+	newRow, newCol := e.Buffer.DeleteRange(rStart, cStart, rEnd, cEnd)
+	e.Cursor.SetPos(newCol, newRow)
+}
+
+func (e *Editor) getNormalizedSelection() (rStart, cStart, rEnd, cEnd int) {
+	rStart, rEnd = e.Selection.StartRow, e.Selection.EndRow
+	cStart, cEnd = e.Selection.StartCol, e.Selection.EndCol
+	if rStart > rEnd || (rStart == rEnd && cStart > cEnd) {
+		rStart, rEnd = rEnd, rStart
+		cStart, cEnd = cEnd, cStart
+	}
+	return
+}
+
+func (e *Editor) getSelectedText() string {
+	if !e.Selection.Active {
+		return ""
+	}
+	rStart, cStart, rEnd, cEnd := e.getNormalizedSelection()
+	var sb strings.Builder
+
+	if rStart == rEnd {
+		line := e.Buffer.GetLine(rStart)
+		if cStart < len(line) {
+			end := cEnd + 1
+			if end > len(line) {
+				end = len(line)
+			}
+			sb.WriteString(string(line[cStart:end]))
+		}
+		return sb.String()
+	}
+
+	// First line
+	line := e.Buffer.GetLine(rStart)
+	if cStart < len(line) {
+		sb.WriteString(string(line[cStart:]))
+	}
+	sb.WriteRune('\n')
+
+	// Middle lines
+	for r := rStart + 1; r < rEnd; r++ {
+		line = e.Buffer.GetLine(r)
+		sb.WriteString(string(line))
+		sb.WriteRune('\n')
+	}
+
+	// Last line
+	line = e.Buffer.GetLine(rEnd)
+	end := cEnd + 1
+	if end > len(line) {
+		end = len(line)
+	}
+	sb.WriteString(string(line[:end]))
+
+	return sb.String()
+}
+
+func (e *Editor) isSelected(col, row int) bool {
+	if !e.Selection.Active {
+		return false
+	}
+	rStart, cStart, rEnd, cEnd := e.getNormalizedSelection()
+
+	if row < rStart || row > rEnd {
+		return false
+	}
+	if row > rStart && row < rEnd {
+		return true
+	}
+	if rStart == rEnd {
+		return col >= cStart && col <= cEnd
+	}
+	if row == rStart {
+		return col >= cStart
+	}
+	if row == rEnd {
+		return col <= cEnd
+	}
+	return false
 }

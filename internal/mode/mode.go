@@ -19,6 +19,7 @@ type EditorInterface interface {
 	InsertNewline()
 	DeleteChar()
 	SetMode(name string)
+	GetMode(name string) Mode
 	QuitEditor()
 	ExecuteCommand(cmd string)
 	SaveFile()

@@ -132,6 +132,32 @@ func (b *Buffer) DeleteChar(row, col int) (int, int) {
 	return row, col
 }
 
+// DeleteRange deletes all characters between (startRow, startCol) and (endRow, endCol) inclusive.
+func (b *Buffer) DeleteRange(startRow, startCol, endRow, endCol int) (int, int) {
+	if startRow > endRow || (startRow == endRow && startCol > endCol) {
+		startRow, endRow = endRow, startRow
+		startCol, endCol = endCol, startCol
+	}
+
+	startIdx := b.getIndex(startRow, startCol)
+	endIdx := b.getIndex(endRow, endCol) + 1
+	if endIdx > b.gb.Length() {
+		endIdx = b.gb.Length()
+	}
+
+	amount := endIdx - startIdx
+	if amount <= 0 {
+		return startRow, startCol
+	}
+
+	for i := 0; i < amount; i++ {
+		b.gb.Delete(startIdx + 1)
+	}
+
+	b.recomputeLineStarts()
+	return startRow, startCol
+}
+
 // GetLine returns a specific line as a slice of runes for rendering.
 func (b *Buffer) GetLine(row int) []rune {
 	if row < 0 || row >= b.LineCount() {

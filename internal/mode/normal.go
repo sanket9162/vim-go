@@ -52,6 +52,8 @@ func (m *NormalMode) HandleKey(e EditorInterface, ev *tcell.EventKey) {
 			e.MoveCursorToEndOfLine()
 		case "i":
 			e.SetMode("INSERT")
+		case "v":
+			e.SetMode("VISUAL")
 		case ":":
 			e.SetMode("COMMAND")
 		}
