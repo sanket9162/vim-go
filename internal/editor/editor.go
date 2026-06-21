@@ -358,3 +358,77 @@ func (e *Editor) isSelected(col, row int) bool {
 	}
 	return false
 }
+
+// DeleteUnderCursor deletes the character directly under the cursor.
+func (e *Editor) DeleteUnderCursor() {
+	row := e.Cursor.Row()
+	col := e.Cursor.Col()
+	lineLen := e.Buffer.LineLength(row)
+	if lineLen == 0 {
+		return
+	}
+
+	if col >= lineLen {
+		col = lineLen - 1
+	}
+
+	e.Buffer.DeleteRange(row, col, row, col)
+
+	// Shift cursor left if it was snapped past the new end of line
+	newLineLen := e.Buffer.LineLength(row)
+	if e.Cursor.Col() >= newLineLen && newLineLen > 0 {
+		e.Cursor.SetPos(newLineLen-1, row)
+	}
+}
+
+// DeleteLine deletes the entire current line including its trailing newline.
+func (e *Editor) DeleteLine() {
+	row := e.Cursor.Row()
+	lineLen := e.Buffer.LineLength(row)
+
+	e.Buffer.DeleteRange(row, 0, row, lineLen)
+
+	// Adjust cursor to keep it in a valid row bounds
+	totalLines := e.Buffer.LineCount()
+	if row >= totalLines {
+		row = totalLines - 1
+	}
+	if row < 0 {
+		row = 0
+	}
+	e.Cursor.SetPos(0, row)
+}
+
+// DeleteWord deletes from the cursor position to the beginning of the next word.
+func (e *Editor) DeleteWord() {
+	row := e.Cursor.Row()
+	col := e.Cursor.Col()
+	line := e.Buffer.GetLine(row)
+	if len(line) == 0 {
+		// On an empty line, dw deletes the newline character
+		e.Buffer.DeleteRange(row, col, row, col)
+		return
+	}
+
+	nextCol := col
+	// Move past current word chars
+	for nextCol < len(line) && isWordChar(line[nextCol]) {
+		nextCol++
+	}
+	// Move past trailing spaces
+	for nextCol < len(line) && !isWordChar(line[nextCol]) {
+		nextCol++
+	}
+
+	if nextCol == col {
+		// If we're at the end of a line, delete the newline
+		e.Buffer.DeleteRange(row, col, row, col)
+	} else {
+		e.Buffer.DeleteRange(row, col, row, nextCol-1)
+	}
+}
+
+// Helper to check for word characters (matching cursor logic)
+func isWordChar(r rune) bool {
+	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_' || r == '-' || r == '.' || r == '!' || r == ':' || r == '+'
+}

@@ -17,6 +17,18 @@ func (m *NormalMode) HandleKey(e EditorInterface, ev *tcell.EventKey) {
 		e.QuitEditor()
 	case tcell.KeyRune:
 		keyStr := ev.Str()
+		if m.pendingKey == "d" {
+			m.pendingKey = ""
+			switch keyStr {
+			case "d":
+				e.DeleteLine()
+				return
+			case "w":
+				e.DeleteWord()
+				return
+			}
+			return
+		}
 		if m.pendingKey == "g" {
 			m.pendingKey = ""
 			if keyStr == "g" {
@@ -26,8 +38,14 @@ func (m *NormalMode) HandleKey(e EditorInterface, ev *tcell.EventKey) {
 		}
 
 		switch keyStr {
+		case "d":
+			m.pendingKey = "d"
+		case "x":
+			e.DeleteUnderCursor()
 		case "g":
 			m.pendingKey = "g"
+		case "h":
+			e.MoveCursorLeft()
 		case "j":
 			e.MoveCursorLeft()
 		case ";":

@@ -18,6 +18,9 @@ type EditorInterface interface {
 	InsertChar(r rune)
 	InsertNewline()
 	DeleteChar()
+	DeleteUnderCursor()
+	DeleteLine()
+	DeleteWord()
 	SetMode(name string)
 	GetMode(name string) Mode
 	QuitEditor()
