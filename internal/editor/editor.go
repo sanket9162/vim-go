@@ -62,6 +62,10 @@ func NewEditor(s *ui.Screen, filename string) *Editor {
 // SetMode changes the editor's current input mode.
 func (e *Editor) SetMode(name string) {
 	if m, ok := e.modes[name]; ok {
+		// save snapshot before entering INSERT mode.
+		if name == "INSERT" && e.CurrentMode.Name() != "INSERT" {
+			e.Buffer.SaveSnapshot(e.Cursor.Col(), e.Cursor.Row())
+		}
 		e.CurrentMode = m
 		if name == "VISUAL" {
 			if vm, ok := m.(*mode.VisualMode); ok {
@@ -276,6 +280,7 @@ func (e *Editor) DeleteSelection() {
 	if !e.Selection.Active {
 		return
 	}
+	e.Buffer.SaveSnapshot(e.Cursor.Col(), e.Cursor.Row())
 	rStart, cStart, rEnd, cEnd := e.getNormalizedSelection()
 	newRow, newCol := e.Buffer.DeleteRange(rStart, cStart, rEnd, cEnd)
 	e.Cursor.SetPos(newCol, newRow)
