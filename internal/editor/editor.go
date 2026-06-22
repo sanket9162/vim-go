@@ -19,16 +19,25 @@ type Selection struct {
 
 // Editor is the main controller that ties the buffer, cursor, and screen together.
 type Editor struct {
-	Buffer      *buffer.Buffer
-	Cursor      *buffer.Cursor
-	Screen      *ui.Screen
-	Viewport    *ui.Viewport
-	CurrentMode mode.Mode
-	modes       map[string]mode.Mode
-	Quit        bool
-	FileName    string
-	Selection   Selection
-	Clipboard   string
+	Buffer        *buffer.Buffer
+	Cursor        *buffer.Cursor
+	Screen        *ui.Screen
+	Viewport      *ui.Viewport
+	CurrentMode   mode.Mode
+	modes         map[string]mode.Mode
+	Quit          bool
+	FileName      string
+	Selection     Selection
+	Clipboard     string
+	SearchQuery   string
+	SearchResults []SearchMatch
+	SearchIndex   int
+}
+
+type SearchMatch struct {
+	Row int
+	Col int
+	Len int
 }
 
 // NewEditor initializes a new Editor instance.
