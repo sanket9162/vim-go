@@ -377,6 +377,7 @@ func (e *Editor) DeleteUnderCursor() {
 		col = lineLen - 1
 	}
 
+	e.Buffer.SaveSnapshot(e.Cursor.Col(), e.Cursor.Row())
 	e.Buffer.DeleteRange(row, col, row, col)
 
 	// Shift cursor left if it was snapped past the new end of line
@@ -391,6 +392,7 @@ func (e *Editor) DeleteLine() {
 	row := e.Cursor.Row()
 	lineLen := e.Buffer.LineLength(row)
 
+	e.Buffer.SaveSnapshot(e.Cursor.Col(), e.Cursor.Row())
 	e.Buffer.DeleteRange(row, 0, row, lineLen)
 
 	// Adjust cursor to keep it in a valid row bounds
