@@ -413,6 +413,7 @@ func (e *Editor) DeleteWord() {
 	line := e.Buffer.GetLine(row)
 	if len(line) == 0 {
 		// On an empty line, dw deletes the newline character
+		e.Buffer.SaveSnapshot(e.Cursor.Col(), e.Cursor.Row())
 		e.Buffer.DeleteRange(row, col, row, col)
 		return
 	}
@@ -427,6 +428,7 @@ func (e *Editor) DeleteWord() {
 		nextCol++
 	}
 
+	e.Buffer.SaveSnapshot(e.Cursor.Col(), e.Cursor.Row())
 	if nextCol == col {
 		// If we're at the end of a line, delete the newline
 		e.Buffer.DeleteRange(row, col, row, col)
