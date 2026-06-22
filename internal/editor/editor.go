@@ -63,6 +63,7 @@ func NewEditor(s *ui.Screen, filename string) *Editor {
 	e.modes["INSERT"] = &mode.InsertMode{}
 	e.modes["COMMAND"] = &mode.CommandMode{}
 	e.modes["VISUAL"] = &mode.VisualMode{}
+	e.modes["SEARCH"] = &mode.SearchMode{}
 	e.CurrentMode = e.modes["NORMAL"]
 
 	return e

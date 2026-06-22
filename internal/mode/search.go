@@ -1,5 +1,7 @@
 package mode
 
+import "github.com/gdamore/tcell/v3"
+
 // SearchMode handles input when the user is typing a query after pressing '/'
 type SearchMode struct {
 	Query string
@@ -9,3 +11,5 @@ type SearchMode struct {
 func (m *SearchMode) Name() string {
 	return "/" + m.Query
 }
+
+func (m *SearchMode) HandleKey(e EditorInterface, ev *tcell.EventKey) {}
