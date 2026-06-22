@@ -29,6 +29,9 @@ type EditorInterface interface {
 	Paste(before bool)
 	ExecuteCommand(cmd string)
 	SaveFile()
+	PerformSearch(query string)
+	SearchNext()
+	SearchPrev()
 }
 
 // Mode represents a state of the editor with its own key handling logic.

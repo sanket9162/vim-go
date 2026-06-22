@@ -34,6 +34,7 @@ type Editor struct {
 	SearchIndex   int
 }
 
+// SearchMatch represents a 2D text coordinate range for a search result.
 type SearchMatch struct {
 	Row int
 	Col int
@@ -183,6 +184,12 @@ func (e *Editor) Render() {
 			style := tcell.StyleDefault
 			if e.isSelected(bufferCol, bufferRow) {
 				style = tcell.StyleDefault.Background(tcell.ColorCadetBlue).Foreground(tcell.ColorWhite)
+			} else if isMatch, isCurrent := e.isSearchMatch(bufferCol, bufferRow); isMatch {
+				if isCurrent {
+					style = tcell.StyleDefault.Background(tcell.ColorOrange).Foreground(tcell.ColorBlack)
+				} else {
+					style = tcell.StyleDefault.Background(tcell.ColorYellow).Foreground(tcell.ColorBlack)
+				}
 			}
 			e.Screen.SetContent(x+gutterWidth, y, line[bufferCol], nil, style)
 		}
@@ -194,12 +201,7 @@ func (e *Editor) Render() {
 	visualX := e.Cursor.Col() - e.Viewport.OffsetX + gutterWidth
 	visualY := e.Cursor.Row() - e.Viewport.OffsetY
 
-	// if e.CurrentMode.Name()[0] == ':' {
-	// 	visualX = len(e.CurrentMode.Name())
-	// 	visualY = screenHeight - 1
-	// }
-
-	if strings.HasPrefix(e.CurrentMode.Name(), ":") {
+	if strings.HasPrefix(e.CurrentMode.Name(), ":") || strings.HasPrefix(e.CurrentMode.Name(), "/") {
 		visualX = len(e.CurrentMode.Name())
 		visualY = screenHeight - 1
 	}
@@ -513,4 +515,94 @@ func (e *Editor) Redo() {
 	if newCol, newRow, ok := e.Buffer.Redo(cCol, cRow); ok {
 		e.Cursor.SetPos(newCol, newRow)
 	}
+}
+
+// PerformSearch scans the buffer for string occurrences and populates highlights.
+func (e *Editor) PerformSearch(query string) {
+	e.SearchQuery = query
+	e.SearchResults = []SearchMatch{}
+	e.SearchIndex = -1
+
+	if query == "" {
+		return
+	}
+
+	for r := 0; r < e.Buffer.LineCount(); r++ {
+		line := string(e.Buffer.GetLine(r))
+		lowerLine := strings.ToLower(line)
+		lowerQuery := strings.ToLower(query)
+
+		start := 0
+		for {
+			idx := strings.Index(lowerLine[start:], lowerQuery)
+			if idx == -1 {
+				break
+			}
+			matchCol := start + idx
+			e.SearchResults = append(e.SearchResults, SearchMatch{
+				Row: r,
+				Col: matchCol,
+				Len: len(query),
+			})
+			start = matchCol + len(query)
+			if len(query) == 0 {
+				break
+			}
+		}
+	}
+
+	if len(e.SearchResults) > 0 {
+		// Jump to first match at or after cursor position
+		cursorRow := e.Cursor.Row()
+		cursorCol := e.Cursor.Col()
+		e.SearchIndex = 0
+		for i, match := range e.SearchResults {
+			if match.Row > cursorRow || (match.Row == cursorRow && match.Col >= cursorCol) {
+				e.SearchIndex = i
+				break
+			}
+		}
+		e.JumpToMatch(e.SearchIndex)
+	}
+}
+
+// JumpToMatch focuses the viewport/cursor on the selected match.
+func (e *Editor) JumpToMatch(index int) {
+	if index < 0 || index >= len(e.SearchResults) {
+		return
+	}
+	match := e.SearchResults[index]
+	e.Cursor.SetPos(match.Col, match.Row)
+	e.Viewport.ScrollTo(match.Col, match.Row)
+}
+
+// SearchNext advances to the next search result.
+func (e *Editor) SearchNext() {
+	if len(e.SearchResults) == 0 {
+		return
+	}
+	e.SearchIndex = (e.SearchIndex + 1) % len(e.SearchResults)
+	e.JumpToMatch(e.SearchIndex)
+}
+
+// SearchPrev wraps back to the previous search result.
+func (e *Editor) SearchPrev() {
+	if len(e.SearchResults) == 0 {
+		return
+	}
+	e.SearchIndex = (e.SearchIndex - 1 + len(e.SearchResults)) % len(e.SearchResults)
+	e.JumpToMatch(e.SearchIndex)
+}
+
+// isSearchMatch determines if a character position is part of a match.
+func (e *Editor) isSearchMatch(col, row int) (bool, bool) {
+	if len(e.SearchResults) == 0 {
+		return false, false
+	}
+	for i, match := range e.SearchResults {
+		if match.Row == row && col >= match.Col && col < match.Col+match.Len {
+			return true, i == e.SearchIndex
+		}
+	}
+	return false, false
 }

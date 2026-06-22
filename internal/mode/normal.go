@@ -75,12 +75,18 @@ func (m *NormalMode) HandleKey(e EditorInterface, ev *tcell.EventKey) {
 			e.Paste(true)
 		case "u":
 			e.Undo()
+		case "n":
+			e.SearchNext()
+		case "N":
+			e.SearchPrev()
 		case "i":
 			e.SetMode("INSERT")
 		case "v":
 			e.SetMode("VISUAL")
 		case ":":
 			e.SetMode("COMMAND")
+		case "/":
+			e.SetMode("SEARCH")
 		}
 	default:
 		m.pendingKey = ""
