@@ -447,6 +447,7 @@ func (e *Editor) Paste(before bool) {
 		return
 	}
 
+	e.Buffer.SaveSnapshot(e.Cursor.Col(), e.Cursor.Row())
 	row := e.Cursor.Row()
 	col := e.Cursor.Col()
 	isLine := strings.HasSuffix(e.Clipboard, "\n")
