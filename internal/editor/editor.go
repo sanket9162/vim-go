@@ -85,6 +85,12 @@ func (e *Editor) SetMode(name string) {
 			}
 		} else if name == "NORMAL" {
 			e.ClearSelection()
+			row := e.Cursor.Row()
+			col := e.Cursor.Col()
+			lineLen := e.Buffer.LineLength(row)
+			if col >= lineLen && lineLen > 0 {
+				e.Cursor.SetPos(lineLen-1, row)
+			}
 		}
 	}
 }
@@ -222,10 +228,15 @@ func (e *Editor) renderStatusBar(gutterWidth int) {
 
 	// Left side: Mode and Filename
 	modeName := e.CurrentMode.Name()
-	if !strings.HasPrefix(modeName, ":") {
-		modeName = "--" + modeName + "--"
+	isCmdOrSearch := strings.HasPrefix(modeName, ":") || strings.HasPrefix(modeName, "/")
+
+	if isCmdOrSearch {
+		// Just draw the query/command at the bottom row (overwrite everything on that row)
+		e.Screen.DrawText(0, h-1, modeName+strings.Repeat(" ", w-len(modeName)))
+		return
 	}
 
+	modeName = "--" + modeName + "--"
 	fileName := e.FileName
 	if fileName == "" {
 		fileName = "[No Name]"

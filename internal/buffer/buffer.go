@@ -128,15 +128,22 @@ func (b *Buffer) InsertNewline(row, col int) {
 func (b *Buffer) DeleteChar(row, col int) (int, int) {
 	idx := b.getIndex(row, col)
 	if idx > 0 {
+		var targetCol int
+		if col == 0 {
+			targetCol = b.LineLength(row - 1)
+		} else {
+			targetCol = col - 1
+		}
+
 		b.gb.Delete(idx)
 		b.recomputeLineStarts()
 
 		// Calculate new 2D position to return to the cursor
 		if col > 0 {
-			return row, col - 1
+			return row, targetCol
 		}
 		// If we deleted a newline, cursor moves to end of previous line
-		return row - 1, b.LineLength(row - 1)
+		return row - 1, targetCol
 	}
 	return row, col
 }
