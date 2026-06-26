@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gdamore/tcell/v3"
 	"github.com/sanket9162/vim-go/internal/buffer"
+	"github.com/sanket9162/vim-go/internal/highlight"
 	"github.com/sanket9162/vim-go/internal/mode"
 	"github.com/sanket9162/vim-go/internal/ui"
 )
@@ -32,6 +32,7 @@ type Editor struct {
 	SearchQuery   string
 	SearchResults []SearchMatch
 	SearchIndex   int
+	Theme         *ui.LoadedTheme
 }
 
 // SearchMatch represents a 2D text coordinate range for a search result.
@@ -58,6 +59,7 @@ func NewEditor(s *ui.Screen, filename string) *Editor {
 		Viewport: ui.NewViewport(w, h),
 		FileName: filename,
 		modes:    make(map[string]mode.Mode),
+		Theme:    ui.DefaultTheme(),
 	}
 
 	e.modes["NORMAL"] = &mode.NormalMode{}
@@ -182,19 +184,21 @@ func (e *Editor) Render() {
 		e.Screen.DrawText(0, y, lineNumstr)
 
 		line := e.Buffer.GetLine(bufferRow)
+		tokenTypes := highlight.TokenizeLine(string(line), highlight.GoRules)
 		for x := 0; x < e.Viewport.Width; x++ {
 			bufferCol := x + e.Viewport.OffsetX
 			if bufferCol >= len(line) {
 				break
 			}
-			style := tcell.StyleDefault
+			//Apply theme style for the token type
+			style := e.Theme.GetTokenStyle(tokenTypes[bufferCol])
 			if e.isSelected(bufferCol, bufferRow) {
-				style = tcell.StyleDefault.Background(tcell.ColorCadetBlue).Foreground(tcell.ColorWhite)
+				style = e.Theme.SelectionStyle
 			} else if isMatch, isCurrent := e.isSearchMatch(bufferCol, bufferRow); isMatch {
 				if isCurrent {
-					style = tcell.StyleDefault.Background(tcell.ColorOrange).Foreground(tcell.ColorBlack)
+					style = e.Theme.SearchCurrentStyle
 				} else {
-					style = tcell.StyleDefault.Background(tcell.ColorYellow).Foreground(tcell.ColorBlack)
+					style = e.Theme.SearchMatchStyle
 				}
 			}
 			e.Screen.SetContent(x+gutterWidth, y, line[bufferCol], nil, style)
