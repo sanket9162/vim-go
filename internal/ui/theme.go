@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/gdamore/tcell/v3"
+	"github.com/sanket9162/vim-go/internal/highlight"
 )
 
 // Theme struct the custom theme configuration loaded from a json file.
@@ -95,6 +96,62 @@ func NewLoadedTheme(t Theme) *LoadedTheme {
 
 	return lt
 
+}
+
+// GetTOkenStyle retrieves the resolved tcell.Style for a a Specific highlight.TokenType.
+func (lt *LoadedTheme) GetTokenStyle(tokenType highlight.TokenType) tcell.Style {
+	var key string
+	switch tokenType {
+	case highlight.TokenKeyword:
+		key = "keyword"
+	case highlight.TokenTypeWord:
+		key = "type"
+	case highlight.TokenString:
+		key = "string"
+	case highlight.TokenComment:
+		key = "comment"
+	case highlight.TokenNumber:
+		key = "number"
+	case highlight.TokenFunction:
+		key = "function"
+	default:
+		return lt.DefaultStyle
+	}
+
+	if style, ok := lt.SyntaxStyles[key]; ok {
+		return style
+	}
+	return lt.DefaultStyle
+}
+
+// DefaultTheme returns a fallback theme configuration in case no theme file is parsed.
+func DefaultTheme() *LoadedTheme {
+	t := Theme{
+		Name: "Default Dark",
+		Editor: EditorColors{
+			Background:              "#1e1e1e",
+			Foreground:              "#d4d4d4",
+			GutterBackground:        "#1e1e1e",
+			GutterForeground:        "#858585",
+			SelectionBackground:     "#264f78",
+			SelectionForeground:     "#ffffff",
+			SearchMatchBackground:   "#613214",
+			SearchMatchForeground:   "#ffffff",
+			SearchCurrentBackground: "#9b4d1c",
+			SearchCurrentForeground: "#ffffff",
+			StatusBarBackground:     "#007acc",
+			StatusBarForeground:     "#ffffff",
+		},
+		Syntax: map[string]string{
+			"comment":  "#6a9955",
+			"keyword":  "#569cd6",
+			"type":     "#4ec9b0",
+			"string":   "#ce9178",
+			"number":   "#b5cea8",
+			"function": "#dcdcaa",
+		},
+	}
+	return NewLoadedTheme(t)
 }
 
 // Global or Editor-specific helper to translate hex/names to tcell.Color
