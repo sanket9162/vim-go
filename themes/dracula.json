@@ -1,0 +1,26 @@
+{
+    "name": "Dracula Dark",
+    "editor": {
+        "background": "#282a36",
+        "foreground": "#f8f8f2",
+        "gutter_background": "#21222c",
+        "gutter_foreground": "#6272a4",
+        "selection_background": "#44475a",
+        "selection_foreground": "#f8f8f2",
+        "search_match_background": "#ffb86c",
+        "search_match_foreground": "#282a36",
+        "search_current_background": "#ff5555",
+        "search_current_foreground": "#f8f8f2",
+        "status_bar_background": "#bd93f9",
+        "status_bar_foreground": "#282a36"
+    },
+    "syntax": {
+        "keyword": "#ff79c6",
+        "type": "#8be9fd",
+        "string": "#f1fa8c",
+        "comment": "#6272a4",
+        "number": "#bd93f9",
+        "function": "#50fa7b",
+        "operator": "#ff79c6"
+    }
+}
