@@ -1,5 +1,7 @@
 package ui
 
+import "github.com/gdamore/tcell/v3"
+
 type Theme struct {
 	Name   string            `json:"name"`
 	Editor EditorColors      `json:"editor"`
@@ -19,4 +21,9 @@ type EditorColors struct {
 	SearchCurrentForeground string `json:"search_current_foreground"`
 	StatusBarBackground     string `json:"status_bar_background"`
 	StatusBarForeground     string `json:"status_bar_foreground"`
+}
+
+// Global or Editor-specific helper to translate hex/names to tcell.Color
+func ResolveColor(name string) tcell.Color {
+	return tcell.GetColor(name)
 }
