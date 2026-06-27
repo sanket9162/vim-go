@@ -128,3 +128,43 @@ func (c *Cursor) MoveToNextWord() {
 func isWordChar(r rune) bool {
 	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_' || r == '-' || r == '.' || r == '!' || r == ':' || r == '+'
 }
+
+// MoveToBackwardWord moves to the cursor backward to the start of the current or previous word.
+func (c *Cursor) MoveToBackwardWord() {
+	col := c.col
+	row := c.row
+
+	// If we're already at the start of the file, do nothing
+	if row == 0 && col == 0 {
+		return
+	}
+
+	getLineRunes := func(r int) []rune {
+		if r < 0 || r >= c.buf.LineCount() {
+			return nil
+		}
+		return c.buf.GetLine(r)
+	}
+
+	line := getLineRunes(row)
+
+	// If at start of line, wrap to end of previous line
+	if col == 0 {
+		row--
+		line = getLineRunes(row)
+		col = len(line)
+	}
+
+	// 1. Move backward past whitespace/punctuation to find a word character
+	for col > 0 && !isWordChar(line[col-1]) {
+		col--
+	}
+
+	// 2. Move backward past aplhanumeric word characters to find start of the word
+	for col > 0 && isWordChar(line[col-1]) {
+		col--
+	}
+
+	c.SetPos(col, row)
+
+}
