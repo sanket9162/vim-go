@@ -178,10 +178,26 @@ func (e *Editor) Render() {
 			break
 		}
 
-		// Draw Line Number
-		lineNumstr := fmt.Sprintf("%*d", gutterWidth-1, bufferRow+1)
-		// Optional : Draw with a different style/color
-		e.Screen.DrawText(0, y, lineNumstr)
+		// Calculate absolute or relative line number
+		var lineNumVal int
+		currentLine := e.Cursor.Row()
+		if bufferRow == currentLine {
+			lineNumVal = bufferRow + 1 // Absolute line number for current line
+		} else {
+			// Relative offset for other lines
+			lineNumVal = bufferRow - currentLine
+			if lineNumVal < 0 {
+				lineNumVal = -lineNumVal
+			}
+		}
+
+		lineNumstr := fmt.Sprintf("%*d", gutterWidth-1, lineNumVal)
+		// Draw with theme's gutter style
+		for i, r := range lineNumstr {
+			e.Screen.SetContent(i, y, r, nil, e.Theme.GutterStyle)
+		}
+		// Clear trailing space in the gutter before the editor viewport starts
+		e.Screen.SetContent(gutterWidth-1, y, ' ', nil, e.Theme.GutterStyle)
 
 		line := e.Buffer.GetLine(bufferRow)
 		tokenTypes := highlight.TokenizeLine(string(line), highlight.GoRules)
