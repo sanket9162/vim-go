@@ -168,3 +168,45 @@ func (c *Cursor) MoveToBackwardWord() {
 	c.SetPos(col, row)
 
 }
+
+// MoveToEndOfWord move the cursor forward to end of the current or next wrod.
+func (c *Cursor) MoveToEndOfWord() {
+	row := c.row
+	col := c.col
+	line := c.buf.GetLine(row)
+
+	wrapToNextLine := func() bool {
+		if row < c.buf.LineCount()-1 {
+			row++
+			line = c.buf.GetLine(row)
+			col = 0
+			return true
+		}
+		return false
+	}
+
+	if len(line) == 0 || col >= len(line)-1 {
+		if !wrapToNextLine() {
+			return
+		}
+	} else {
+		// Increment by 1 first to prevent cursor from getting stuck on current end-of-word
+		col++
+	}
+
+	// 1.Move forward past whitespace/punctuation of find a wrod character
+	for col < len(line) && !isWordChar(line[col]) {
+		col++
+		if col >= len(line) {
+			if !wrapToNextLine() {
+				// put cursor at the last character of the previous line on EOF boundary
+				row--
+				line = c.buf.GetLine(row)
+				c.SetPos(len(line)-1, row)
+				return
+			}
+		}
+	}
+	//
+
+}
