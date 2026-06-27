@@ -15,6 +15,8 @@ type EditorInterface interface {
 	MoveCursorToEndOfFile()
 	MoveCursorToEndOfLine()
 	MoveCursorToNextWord()
+	MoveCursorToBackwardWord()
+	MoveCursorToEndOfWord()
 	InsertChar(r rune)
 	InsertNewline()
 	DeleteChar()
