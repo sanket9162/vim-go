@@ -61,6 +61,10 @@ func (m *VisualMode) HandleKey(e EditorInterface, ev *tcell.EventKey) {
 			e.MoveCursorToEndOfLine()
 		case "w":
 			e.MoveCursorToNextWord()
+		case "b":
+			e.MoveCursorToBackwardWord()
+		case "e":
+			e.MoveCursorToEndOfWord()
 			// Operations on selection
 		case "y": // Yank (copy) selection
 			vEdit.YankSelection()
