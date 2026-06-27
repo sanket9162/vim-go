@@ -114,6 +114,10 @@ func (e *Editor) MoveCursorUp() { e.Cursor.MoveUp() }
 // MoveCursorDown moves the cursor one position down.
 func (e *Editor) MoveCursorDown() { e.Cursor.MoveDown() }
 
+func (e *Editor) MoveCursorToBackwardWord() { e.Cursor.MoveToBackwardWord() }
+
+func (e *Editor) MoveCursorToEndOfWord() { e.Cursor.MoveToEndOfWord() }
+
 // InsertChar inserts a single character into the buffer at the cursor position.
 func (e *Editor) InsertChar(r rune) {
 	e.Buffer.InsertChar(e.Cursor.Row(), e.Cursor.Col(), r)
