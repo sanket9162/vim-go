@@ -49,3 +49,9 @@ func StartClient(binaryPath string, agrs []string, workspacePath string) (*Clien
 	return c, nil
 
 }
+
+func (c *Client) Close() {
+	_ = c.stdin.Close()
+	_ = c.stdout.Close()
+	_ = c.cmd.Process.Kill()
+}
