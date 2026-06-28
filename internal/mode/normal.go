@@ -150,6 +150,12 @@ func (m *NormalMode) HandleKey(e EditorInterface, ev *tcell.EventKey) {
 				e.MoveCursorToEndOfWord()
 			}
 			m.count = 0
+		case "o":
+			e.InsertLineBelow()
+			m.count = 0
+		case "O":
+			e.InsertLineAbove()
+			m.count = 0
 		case "i":
 			e.SetMode("INSERT")
 			m.count = 0
