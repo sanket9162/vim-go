@@ -19,6 +19,8 @@ type EditorInterface interface {
 	MoveCursorToEndOfWord()
 	InsertChar(r rune)
 	InsertNewline()
+	InsertLineBelow()
+	InsertLineAbove()
 	DeleteChar()
 	DeleteUnderCursor()
 	DeleteLine()
