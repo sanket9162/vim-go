@@ -45,3 +45,18 @@ type ClientCapabilities struct {
 	TextDocument interface{} `json:"textDocument,omitempty"`
 	Workspace    interface{} `json:"workspace,omitempty"`
 }
+
+// InitializeResult represents the server capabilities returned on handshake.
+type InitializeResult struct {
+	Capabilities ServerCapabilities `json:"capabilities"`
+}
+
+// ServerCapabilities defines features supported by the language server.
+type ServerCapabilities struct {
+	TextDocumentSync          interface{} `json:"textDocumentSync,omitempty"`
+	DefinitionProvider        bool        `json:"definitionProvider,omitempty"`
+	HoverProvider             bool        `json:"hoverProvider,omitempty"`
+	CompletionProvider        interface{} `json:"completionProvider,omitempty"`
+	SignatureHelpProvider     interface{} `json:"signatureHelpProvider,omitempty"`
+	DocumentHighlightProvider bool        `json:"documentHighlightProvider,omitempty"`
+}
