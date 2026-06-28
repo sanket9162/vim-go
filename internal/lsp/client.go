@@ -55,3 +55,11 @@ func (c *Client) Close() {
 	_ = c.stdout.Close()
 	_ = c.cmd.Process.Kill()
 }
+
+func (c *Client) getNextID() int {
+	c.idMu.Lock()
+	defer c.idMu.Unlock()
+
+	c.nextID++
+	return c.nextID
+}
