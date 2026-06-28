@@ -24,3 +24,24 @@ type ResponseError struct {
 	Message string          `json:"message"`
 	Data    json.RawMessage `json:"data,omitempty"`
 }
+
+// Notification represents a JSON-RPC 2.0 notification message.
+type Notification struct {
+	JsonRPC string      `json:"jsonrpc"`
+	Method  string      `json:"method"`
+	Params  interface{} `json:"params"`
+}
+
+// InitializeParams represents the parameters for the 'initialize' request.
+type InitializeParams struct {
+	ProcessID    int                `json:"processId"`
+	RootPath     string             `json:"rootPath,omitempty"`
+	RootURI      string             `json:"rootUri,omitempty"`
+	Capabilities ClientCapabilities `json:"capabilities"`
+}
+
+// ClientCapabilities represents editor/client support flags.
+type ClientCapabilities struct {
+	TextDocument interface{} `json:"textDocument,omitempty"`
+	Workspace    interface{} `json:"workspace,omitempty"`
+}
