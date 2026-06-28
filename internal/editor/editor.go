@@ -130,6 +130,25 @@ func (e *Editor) InsertNewline() {
 	e.Cursor.SetPos(0, e.Cursor.Row()+1)
 }
 
+// InsertLineBelow creates a new empty line below the current cursor row and enters INSERT mode.
+func (e *Editor) InsertLineBelow() {
+	row := e.Cursor.Row()
+	lineLen := e.Buffer.LineLength(row)
+
+	// 1. Save buffer snapshot for undo history
+	e.Buffer.SaveSnapshot(e.Cursor.Col(), row)
+
+	// 2. Insert newline at the end of the current line
+	e.Buffer.InsertNewline(row, lineLen)
+
+	// 3. Position cursor at the beginning of the newly created line below
+	e.Cursor.SetPos(0, row+1)
+
+	// 4. Change input mode to INSERT
+	e.SetMode("INSERT")
+
+}
+
 // DeleteChar deletes the character before the cursor position.
 func (e *Editor) DeleteChar() {
 	row, col := e.Buffer.DeleteChar(e.Cursor.Row(), e.Cursor.Col())
