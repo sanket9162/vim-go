@@ -6,6 +6,7 @@ import (
 
 	"github.com/sanket9162/vim-go/internal/buffer"
 	"github.com/sanket9162/vim-go/internal/highlight"
+	"github.com/sanket9162/vim-go/internal/lsp"
 	"github.com/sanket9162/vim-go/internal/mode"
 	"github.com/sanket9162/vim-go/internal/ui"
 )
@@ -33,6 +34,10 @@ type Editor struct {
 	SearchResults []SearchMatch
 	SearchIndex   int
 	Theme         *ui.LoadedTheme
+	LSPClient     *lsp.Client
+	DocURI        string
+	LanguageID    string
+	DocVersion    int
 }
 
 // SearchMatch represents a 2D text coordinate range for a search result.
