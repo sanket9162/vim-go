@@ -252,3 +252,17 @@ func (c *Client) NotifyDidSave(uri string) error {
 	}
 	return c.sendNotification("textDocument/didSave", params)
 }
+
+type ServerConfig struct {
+	Binary string
+	Args   []string
+}
+
+// ServerRegistry maps file extensions to their corresponding language server binaries and options.
+var ServerRegistry = map[string]ServerConfig{
+	".go":   {Binary: "gopls", Args: []string{"serve"}},
+	".rs":   {Binary: "rust-analyzer", Args: []string{}},
+	".html": {Binary: "vscode-html-language-server", Args: []string{"--stdio"}},
+	".css":  {Binary: "vscode-css-language-server", Args: []string{"--stdio"}},
+	".js":   {Binary: "typescript-language-server", Args: []string{"--stdio"}},
+}
