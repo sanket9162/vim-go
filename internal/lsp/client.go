@@ -2,9 +2,12 @@ package lsp
 
 import (
 	"bufio"
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os/exec"
+	"strconv"
 	"sync"
 )
 
@@ -62,4 +65,46 @@ func (c *Client) getNextID() int {
 
 	c.nextID++
 	return c.nextID
+}
+
+// sendRequest sends a JSON-RPC request and returns a channel to await the reponse.
+func (c *Client) sendRequest(method string, params interface{}) (chan *Response, int, error) {
+	id := c.getNextID()
+	req := Request{
+		JsonRPC: "2.0",
+		ID:      id,
+		Method:  method,
+		Params:  params,
+	}
+
+	body, err := json.Marshal(req)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	ch := make(chan *Response, 1)
+	c.pendingMu.Lock()
+	c.pending[id] = ch
+	c.pendingMu.Unlock()
+
+	if err := c.writeMessage(body); err != nil {
+		c.pendingMu.Lock()
+		delete(c.pending, id)
+		c.pendingMu.Unlock()
+		return nil, 0, err
+	}
+
+	return ch, 0, nil
+
+}
+
+func (c *Client) writeMessage(body []byte) error {
+	var buf bytes.Buffer
+	buf.WriteString("Content-Length: ")
+	buf.WriteString(strconv.Itoa(len(body)))
+	buf.WriteString("\r\n\r\n")
+	buf.Write(body)
+
+	_, err := c.stdin.Write(buf.Bytes())
+	return err
 }
