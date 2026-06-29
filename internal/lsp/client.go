@@ -215,3 +215,16 @@ func (c *Client) initialize() error {
 	return c.sendNotification("initialized", map[string]interface{}{})
 
 }
+
+// NotifyDidOpen notifies the server that a file has been opened.
+func (c *Client) NotifyDidOpen(uri, languageID, text string) error {
+	params := DidOpenTextDocumentParams{
+		TextDocument: TextDocumentItem{
+			URI:        uri,
+			LanguageID: languageID,
+			Version:    1,
+			Text:       text,
+		},
+	}
+	return c.sendNotification("textDocument/didOpen", params)
+}
