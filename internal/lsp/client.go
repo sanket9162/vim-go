@@ -108,3 +108,19 @@ func (c *Client) writeMessage(body []byte) error {
 	_, err := c.stdin.Write(buf.Bytes())
 	return err
 }
+
+// sendNotification sends an asynchronoys JSON-RPC notification
+func (c *Client) sendNotification(method string, params interface{}) error {
+	noti := Notification{
+		JsonRPC: "2.0",
+		Method:  method,
+		Params:  params,
+	}
+
+	body, err := json.Marshal(noti)
+	if err != nil {
+		return err
+	}
+
+	return c.writeMessage(body)
+}
