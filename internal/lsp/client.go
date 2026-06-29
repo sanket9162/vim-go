@@ -8,6 +8,7 @@ import (
 	"io"
 	"os/exec"
 	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -123,4 +124,53 @@ func (c *Client) sendNotification(method string, params interface{}) error {
 	}
 
 	return c.writeMessage(body)
+}
+
+func (c *Client) readLoop() {
+
+	for {
+		// Read Headers
+		var contentLength int
+		for {
+			line, err := c.reader.ReadString('\n')
+			if err != nil {
+				return
+			}
+			line = strings.TrimSpace(line)
+			if line == "" {
+				// End of headers delimiter
+				break
+			}
+
+			if strings.HasPrefix(line, "Content-Length:") {
+				parts := strings.Split(line, ":")
+				if len(parts) == 2 {
+					contentLength, _ = strconv.Atoi(strings.TrimSpace(parts[1]))
+				}
+			}
+
+		}
+
+		if contentLength == 0 {
+			continue
+		}
+
+		// Read body
+		body := make([]byte, contentLength)
+		if _, err := io.ReadFull(c.reader, body); err != nil {
+			return
+		}
+
+		var msg Response
+		if err := json.Unmarshal(body, &msg); err == nil && msg.ID != 0 {
+			// Resolve request callback
+			c.pendingMu.Lock()
+			ch, ok := c.pending[msg.ID]
+			if ok {
+				ch <- &msg
+				delete(c.pending, msg.ID)
+			}
+			c.pendingMu.Unlock()
+		}
+	}
 }
