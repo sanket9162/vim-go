@@ -228,3 +228,27 @@ func (c *Client) NotifyDidOpen(uri, languageID, text string) error {
 	}
 	return c.sendNotification("textDocument/didOpen", params)
 }
+
+// NotifyDidChange notifies the server of changes. We send full text changes for simplicity and safety.
+func (c *Client) NotifyDidChange(uri string, version int, text string) error {
+	params := DidChangeTextDocumentParams{
+		TextDocument: VersionedTextDocumentIdentifier{
+			URI:     uri,
+			Version: version,
+		},
+		ContentChanges: []TextDocumentContentChangeEvent{
+			{Text: text},
+		},
+	}
+	return c.sendNotification("textDocument/didChange", params)
+}
+
+// NotifyDidSave notifies the server that the file was written to disk.
+func (c *Client) NotifyDidSave(uri string) error {
+	params := DidSaveTextDocumentParams{
+		TextDocument: TextDocumentIdentifier{
+			URI: uri,
+		},
+	}
+	return c.sendNotification("textDocument/didSave", params)
+}
