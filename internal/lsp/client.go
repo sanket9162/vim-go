@@ -51,6 +51,15 @@ func StartClient(binaryPath string, agrs []string, workspacePath string) (*Clien
 		rootURI: "file://" + workspacePath,
 	}
 
+	// Start reading stdout in background goroutine
+	go c.readLoop()
+
+	// Perform initialize handshake
+	if err := c.initialize(); err != nil {
+		c.Close()
+		return nil, fmt.Errorf("LSP initialization handshake failed: %w", err)
+	}
+
 	return c, nil
 
 }
