@@ -50,6 +50,11 @@ func (b *Buffer) Save(filename string) error {
 	return os.WriteFile(filename, []byte(text), 0644)
 }
 
+// Text returns the entire buffer content as a string.
+func (b *Buffer) Text() string {
+	return b.gb.Text()
+}
+
 // NewBuffer creates a new Buffer utilizing a GapBuffer backend.
 func NewBuffer() *Buffer {
 	b := &Buffer{
