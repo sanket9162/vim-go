@@ -4,10 +4,10 @@ import "encoding/json"
 
 // Request represents a JSON-PRC 2.0 request message.
 type Request struct {
-	JsonRPC string          `json:"jsonrpc"`
-	ID      int             `json:"id"`
-	Method  string          `json:"method"`
-	Params  json.RawMessage `json:"params"`
+	JsonRPC string      `json:"jsonrpc"`
+	ID      int         `json:"id"`
+	Method  string      `json:"method"`
+	Params  interface{} `json:"params"`
 }
 
 // Response represents a JSON-RPC 2.0 response message.
