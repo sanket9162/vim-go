@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -173,4 +174,35 @@ func (c *Client) readLoop() {
 			c.pendingMu.Unlock()
 		}
 	}
+}
+
+func (c *Client) initialize() error {
+	parms := InitializeParams{
+		ProcessID: os.Getpid(),
+		RootURI:   c.rootURI,
+		Capabilities: ClientCapabilities{
+			TextDocument: map[string]interface{}{
+				"defintion": map[string]interface{}{
+					"dynamicRegistration": true,
+				},
+				"hover": map[string]interface{}{
+					"contentFormat": []string{"markdown", "plaintext"},
+				},
+			},
+		},
+	}
+
+	ch, _, err := c.sendRequest("initialize", parms)
+	if err != nil {
+		return err
+	}
+
+	resp := <-ch
+	if resp.Error != nil {
+		return fmt.Errorf("server initialization error: %s", resp.Error.Message)
+	}
+
+	// Send initialized notification confirmation
+	return c.sendNotification("initialized", map[string]interface{}{})
+
 }
