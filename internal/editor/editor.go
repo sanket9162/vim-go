@@ -2,10 +2,14 @@ package editor
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/sanket9162/vim-go/internal/buffer"
 	"github.com/sanket9162/vim-go/internal/highlight"
+	"github.com/sanket9162/vim-go/internal/lsp"
 	"github.com/sanket9162/vim-go/internal/mode"
 	"github.com/sanket9162/vim-go/internal/ui"
 )
@@ -33,6 +37,10 @@ type Editor struct {
 	SearchResults []SearchMatch
 	SearchIndex   int
 	Theme         *ui.LoadedTheme
+	LSPClient     *lsp.Client
+	DocURI        string
+	LanguageID    string
+	DocVersion    int
 }
 
 // SearchMatch represents a 2D text coordinate range for a search result.
@@ -68,6 +76,32 @@ func NewEditor(s *ui.Screen, filename string) *Editor {
 	e.modes["VISUAL"] = &mode.VisualMode{}
 	e.modes["SEARCH"] = &mode.SearchMode{}
 	e.CurrentMode = e.modes["NORMAL"]
+
+	if filename != "" {
+		absPath, err := filepath.Abs(filename)
+		if err == nil {
+			e.DocURI = "file://" + absPath
+		} else {
+			e.DocURI = "file://" + filepath.Clean(filename)
+		}
+		e.LanguageID = getLanguageID(filename)
+		e.DocVersion = 1
+
+		ext := filepath.Ext(filename)
+		if cfg, ok := lsp.ServerRegistry[ext]; ok {
+			binaryPath, err := exec.LookPath(cfg.Binary)
+			if err == nil {
+				wd, err := os.Getwd()
+				if err == nil {
+					client, err := lsp.StartClient(binaryPath, cfg.Args, wd)
+					if err == nil {
+						e.LSPClient = client
+						_ = e.LSPClient.NotifyDidOpen(e.DocURI, e.LanguageID, e.Buffer.Text())
+					}
+				}
+			}
+		}
+	}
 
 	return e
 }
@@ -122,12 +156,14 @@ func (e *Editor) MoveCursorToEndOfWord() { e.Cursor.MoveToEndOfWord() }
 func (e *Editor) InsertChar(r rune) {
 	e.Buffer.InsertChar(e.Cursor.Row(), e.Cursor.Col(), r)
 	e.Cursor.SetPos(e.Cursor.Col()+1, e.Cursor.Row())
+	e.notifyBufferChange()
 }
 
 // InsertNewline inserts a newline at the cursor position.
 func (e *Editor) InsertNewline() {
 	e.Buffer.InsertNewline(e.Cursor.Row(), e.Cursor.Col())
 	e.Cursor.SetPos(0, e.Cursor.Row()+1)
+	e.notifyBufferChange()
 }
 
 // InsertLineBelow creates a new empty line below the current cursor row and enters INSERT mode.
@@ -146,7 +182,7 @@ func (e *Editor) InsertLineBelow() {
 
 	// 4. Change input mode to INSERT
 	e.SetMode("INSERT")
-
+	e.notifyBufferChange()
 }
 
 // InsertLineAbove creates a new empty line above the current cursor row and enters INSERT mode.
@@ -164,17 +200,22 @@ func (e *Editor) InsertLineAbove() {
 
 	// 4. Change input mode to INSERT
 	e.SetMode("INSERT")
+	e.notifyBufferChange()
 }
 
 // DeleteChar deletes the character before the cursor position.
 func (e *Editor) DeleteChar() {
 	row, col := e.Buffer.DeleteChar(e.Cursor.Row(), e.Cursor.Col())
 	e.Cursor.SetPos(col, row)
+	e.notifyBufferChange()
 }
 
 // QuitEditor sets the flag to exit the editor.
 func (e *Editor) QuitEditor() {
 	e.Quit = true
+	if e.LSPClient != nil {
+		e.LSPClient.Close()
+	}
 }
 
 func (e *Editor) MoveCursorToStartOfLine() {
@@ -280,6 +321,9 @@ func (e *Editor) Render() {
 func (e *Editor) SaveFile() {
 	if e.FileName != "" {
 		_ = e.Buffer.Save(e.FileName)
+		if e.LSPClient != nil {
+			_ = e.LSPClient.NotifyDidSave(e.DocURI)
+		}
 	}
 }
 
@@ -367,6 +411,7 @@ func (e *Editor) DeleteSelection() {
 	rStart, cStart, rEnd, cEnd := e.getNormalizedSelection()
 	newRow, newCol := e.Buffer.DeleteRange(rStart, cStart, rEnd, cEnd)
 	e.Cursor.SetPos(newCol, newRow)
+	e.notifyBufferChange()
 }
 
 func (e *Editor) getNormalizedSelection() (rStart, cStart, rEnd, cEnd int) {
@@ -468,6 +513,7 @@ func (e *Editor) DeleteUnderCursor() {
 	if e.Cursor.Col() >= newLineLen && newLineLen > 0 {
 		e.Cursor.SetPos(newLineLen-1, row)
 	}
+	e.notifyBufferChange()
 }
 
 // DeleteLine deletes the entire current line including its trailing newline.
@@ -487,6 +533,7 @@ func (e *Editor) DeleteLine() {
 		row = 0
 	}
 	e.Cursor.SetPos(0, row)
+	e.notifyBufferChange()
 }
 
 // DeleteWord deletes from the cursor position to the beginning of the next word.
@@ -498,6 +545,7 @@ func (e *Editor) DeleteWord() {
 		// On an empty line, dw deletes the newline character
 		e.Buffer.SaveSnapshot(e.Cursor.Col(), e.Cursor.Row())
 		e.Buffer.DeleteRange(row, col, row, col)
+		e.notifyBufferChange()
 		return
 	}
 
@@ -518,6 +566,7 @@ func (e *Editor) DeleteWord() {
 	} else {
 		e.Buffer.DeleteRange(row, col, row, nextCol-1)
 	}
+	e.notifyBufferChange()
 }
 
 // Helper to check for word characters (matching cursor logic)
@@ -571,13 +620,14 @@ func (e *Editor) Paste(before bool) {
 		e.Cursor.SetPos(targetCol+len(e.Clipboard)-1, row)
 
 	}
-
+	e.notifyBufferChange()
 }
 
 func (e *Editor) Undo() {
 	cCol, cRow := e.Cursor.Col(), e.Cursor.Row()
 	if newCol, newRow, ok := e.Buffer.Undo(cCol, cRow); ok {
 		e.Cursor.SetPos(newCol, newRow)
+		e.notifyBufferChange()
 	}
 }
 
@@ -585,6 +635,7 @@ func (e *Editor) Redo() {
 	cCol, cRow := e.Cursor.Col(), e.Cursor.Row()
 	if newCol, newRow, ok := e.Buffer.Redo(cCol, cRow); ok {
 		e.Cursor.SetPos(newCol, newRow)
+		e.notifyBufferChange()
 	}
 }
 
@@ -676,4 +727,32 @@ func (e *Editor) isSearchMatch(col, row int) (bool, bool) {
 		}
 	}
 	return false, false
+}
+
+func (e *Editor) notifyBufferChange() {
+	if e.LSPClient == nil {
+		return
+	}
+	e.DocVersion++
+	_ = e.LSPClient.NotifyDidChange(e.DocURI, e.DocVersion, e.Buffer.Text())
+}
+
+func getLanguageID(filename string) string {
+	ext := filepath.Ext(filename)
+	switch ext {
+	case ".go":
+		return "go"
+	case ".rs":
+		return "rust"
+	case ".html":
+		return "html"
+	case ".css":
+		return "css"
+	case ".js":
+		return "javascript"
+	case ".ts":
+		return "typescript"
+	default:
+		return "plaintext"
+	}
 }

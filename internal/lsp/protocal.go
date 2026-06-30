@@ -4,10 +4,10 @@ import "encoding/json"
 
 // Request represents a JSON-PRC 2.0 request message.
 type Request struct {
-	JsonRPC string          `json:"jsonrpc"`
-	ID      int             `json:"id"`
-	Method  string          `json:"method"`
-	Params  json.RawMessage `json:"params"`
+	JsonRPC string      `json:"jsonrpc"`
+	ID      int         `json:"id"`
+	Method  string      `json:"method"`
+	Params  interface{} `json:"params"`
 }
 
 // Response represents a JSON-RPC 2.0 response message.
@@ -59,4 +59,44 @@ type ServerCapabilities struct {
 	CompletionProvider        interface{} `json:"completionProvider,omitempty"`
 	SignatureHelpProvider     interface{} `json:"signatureHelpProvider,omitempty"`
 	DocumentHighlightProvider bool        `json:"documentHighlightProvider,omitempty"`
+}
+
+// TextDocumentItem represents the metadata and content of an opened file.
+type TextDocumentItem struct {
+	URI        string `json:"uri"`
+	LanguageID string `json:"languageId"`
+	Version    int    `json:"version"`
+	Text       string `json:"text"`
+}
+
+// TextDocumentIdentifier targets a specific file URI.
+type TextDocumentIdentifier struct {
+	URI string `json:"uri"`
+}
+
+// VersionedTextDocumentIdentifier targets a file and its incremental version number.
+type VersionedTextDocumentIdentifier struct {
+	URI     string `json:"uri"`
+	Version int    `json:"version"`
+}
+
+// DidOpenTextDocumentParams is the parameter payload for textDocument/didOpen.
+type DidOpenTextDocumentParams struct {
+	TextDocument TextDocumentItem `json:"textDocument"`
+}
+
+// TextDocumentContentChangeEvent contains full text updates.
+type TextDocumentContentChangeEvent struct {
+	Text string `json:"text"`
+}
+
+// DidChangeTextDocumentParams is the parameter payload for textDocument/didChange.
+type DidChangeTextDocumentParams struct {
+	TextDocument   VersionedTextDocumentIdentifier  `json:"textDocument"`
+	ContentChanges []TextDocumentContentChangeEvent `json:"contentChanges"`
+}
+
+// DidSaveTextDocumentParams is the parameter payload for textDocument/didSave.
+type DidSaveTextDocumentParams struct {
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
 }
